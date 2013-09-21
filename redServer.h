@@ -1,49 +1,70 @@
 /*
   Author: Emmanuel Odeke <odeke@ualberta.ca>
-  Redundant links server: (UDP) 
+  Redundant links server
 */
 
 #ifndef _SERVER_H
 #define _SERVER_H
-  #include <stdio.h>
-  #include <netdb.h>
   #include <errno.h>
   #include <stdlib.h>
   #include <unistd.h>
-  #include <signal.h>
+  #include <signal.h> 
+  #include <stdio.h>
   #include <string.h>
 
-  #include <fcntl.h>
+#ifdef UNIX
   #include <termios.h>
+#endif
 
-  #include <sys/wait.h>
-  #include <arpa/inet.h>
-  #include <sys/types.h>
-  #include <sys/socket.h>
-  #include <netinet/in.h>
+  #include "platformHandler.h" 
 
+  #define raiseWarning(warning){\
+    fprintf(stderr,\
+      "\033[31mWarning %s on line %d in function \"%s\" in file %s\n\033[00m",\
+      warning, __LINE__, __func__, __FILE__\
+    );\
+  }\
+  
+  #define BACKLOG 20 //How many pending connections queue will hold
+  #define BUF_SIZ 60 //Arbitrary size here
+
+  static speed_t TARGET_BAUD_RATE = B57600;
   int MSG_TIMEOUT_SECS = 0;
   int MSG_TIMEOUT_USECS = 1000;
-  static void terminationSignal(int signal){
-    if (signal == SIGINT || signal == SIGSTOP){
-      exit(-1);
+
+  typedef enum{
+    False=0, True=1
+  }Bool;
+
+  typedef enum{
+    RECV_MODE, SEND_MODE
+  }serverSwitch;
+
+  void terminate(){
+    //Will define closing of open resources eg sockets, file descriptors etc
+    fprintf(stderr, "Exiting...\n");
+    exit(-1);
+  }
+
+  static void sigHandler(int signalNum){
+    switch(signalNum){
+      case SIGINT:{
+	terminate();
+	break;
+      }
+      default:{
+	fprintf(stderr, "\033[31mUnhandled signal %d\n\033[00m", signalNum);
+	break;
+      }
     }
   }
 
   void setSigHandler(){
     struct sigaction *theAction;
     theAction = (struct sigaction *)malloc(sizeof(struct sigaction));
-    theAction->sa_handler = terminationSignal;
+    theAction->sa_handler = sigHandler;
     sigaction(SIGINT, theAction, NULL);
   }
-
-  #define raiseWarning(warning){\
-    fprintf(stderr,"Warning %s on line %d in function \"%s\" in file %s\n",\
-      warning, __LINE__, __func__, __FILE__);\
-  }\
-  
-  #define BACKLOG 20 //How many pending connections queue will hold
-  #define BUF_SIZ 60 //Arbitrary size here
 
   void sigchld_handler(int s){
     while(waitpid(-1, NULL, WNOHANG) > 0);
@@ -58,26 +79,6 @@
       return &(((struct sockaddr_in6*)sa)->sin6_addr);
     }
   }
-
-  /*******************************************************************/
-  //Future stuff
-  typedef struct{
-    unsigned int port:16; // 1<<16 : From 0 to 65536
-    int  socketFD;
-    char *hostname;
-  }server; 
-
-  void serverFree(server *srv){
-    if (srv != NULL){
-      free(srv->hostname);
-      free(srv);
-    }
-  }
-
-  server *serverAlloc(void){
-    return (server *)malloc(sizeof(server));
-  }
-  /*******************************************************************/
 
   int getChars(FILE *fp, char *destStr, const int len){
     if (destStr == NULL){
@@ -99,12 +100,15 @@
 
     return nAdded;
   }
-  int runServer(char *port, FILE *ifp){
+
+  int runServer(const char *port, FILE *ifp){
     if (ifp == NULL){
       raiseWarning("Null file pointer passed in");
       return -2;
     }
+
     int convertedFD = fileno(ifp); 
+
     int  sockfd, new_fd; //Listen on sock_fd, the new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
 
@@ -112,18 +116,19 @@
 
     socklen_t sin_size;
     struct sigaction sa;
-    int yes=1;
+    Bool YES = True;
 
     memset(&hints, 0, sizeof(hints));
+    hints.ai_flags = AI_PASSIVE;
     hints.ai_family = AF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE; // use my IP
+    hints.ai_socktype = SOCK_STREAM; //Bi-directional server
 
     int addrResolve = getaddrinfo(NULL, port, &hints, &servinfo);
     if (addrResolve != 0) {
       fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrResolve));
       return 1;
     }
+
     //Loop through all the results, binding to the first that accepts
     for(p = servinfo; p != NULL; p = p->ai_next) {
       if (
@@ -132,15 +137,19 @@
         perror("server: socket");
         continue;
       }
-      if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &yes,sizeof(int)) == -1){
+
+      //Enabling re-usability of our socket
+      if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &YES, sizeof(int)) == -1){
         perror("setsockopt");
         return 1;
       }
+
       if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
         close(sockfd);
         perror("server: binding");
         continue;
       }
+
       break;
     }
 
@@ -155,7 +164,7 @@
       return 1;
     }
 
-    sa.sa_handler = sigchld_handler; //Reaps all dead processes
+    sa.sa_handler = sigchld_handler;//Reaps all dead processes
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
 
@@ -175,14 +184,20 @@
     }
 
     char clientIP[INET6_ADDRSTRLEN];
-    inet_ntop(their_addr.ss_family,
-    get_in_addr((struct sockaddr *)&their_addr), clientIP, sizeof(clientIP));
+
+    inet_ntop(
+      their_addr.ss_family, 
+      get_in_addr((struct sockaddr *)&their_addr), 
+      clientIP, sizeof(clientIP)
+    );
+
     printf("server: got connection from %s\n", clientIP);
 
     //Setting up variables for the transaction
     long long int totalSentByteCount = 0;
     char *sendBuf = NULL;
 
+    //Setting up resources to poll for incoming data through input-terminal
     struct timeval timerStruct;
     timerStruct.tv_sec = MSG_TIMEOUT_SECS;
     timerStruct.tv_usec = MSG_TIMEOUT_USECS;
@@ -193,23 +208,26 @@
 
     select(convertedFD+1, &descriptorSet, NULL, NULL, &timerStruct);
 
-    //Let's modify the stty
-    struct termios tNew;
+    //Let's modify the input terminals settings to match our specs 
+    struct termios tNew, tSav;
     tcgetattr(convertedFD, &tNew);
+    tcgetattr(convertedFD, &tSav);
 
-    cfsetispeed(&tNew, B57600);
-    cfsetospeed(&tNew, B57600);
+    //Changing the terminal's I/O speeds
+    cfsetispeed(&tNew, TARGET_BAUD_RATE);
+    cfsetospeed(&tNew, TARGET_BAUD_RATE);
 
     tNew.c_lflag &= ~(ICANON | ECHO | ECHOE);
     tNew.c_oflag &= ~OPOST;
 
-    //OS, time to flush our settings to that fd
+    //Time to flush our settings to the file descriptor
     tcsetattr(convertedFD, TCSANOW, &tNew);
     
     while (1){
       sendBuf = (char *)malloc(sizeof(char)*BUF_SIZ);
       int nRead = 0;
-      if (FD_ISSET(convertedFD, &descriptorSet)){ //New data has come in the timer is gonna be reset
+      if (FD_ISSET(convertedFD, &descriptorSet)){ 
+	//New data has come in the timer gets reset
         nRead = getChars(ifp, sendBuf, BUF_SIZ);
       }
 
@@ -218,13 +236,16 @@
     #endif
 
       if (! nRead){
+      #ifdef DEBUG
         raiseWarning("Failed to read in a character from");
+      #endif
       }
 
       int sentByteCount = send(new_fd, sendBuf, strlen(sendBuf), 0);
-      if (sentByteCount == -1)  perror("send");
 
+      if (sentByteCount == -1)  perror("send");
       else totalSentByteCount += sentByteCount;
+
       free(sendBuf);
 
       fprintf(stderr, "Total bytes sent: %lld\r", totalSentByteCount);
@@ -237,6 +258,9 @@
     }
 
     //Clean up here
+
+    //Reverting the input terminal's settings
+    tcsetattr(convertedFD, TCSANOW, &tSav);
     close(new_fd);
 
     return 0;

@@ -4,14 +4,12 @@
 */
 #include <stdio.h>
 #include <errno.h>
-#include <netdb.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <assert.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+
+#include "platformHandler.h"
 
 #define MAX_BUF_LENGTH 100 // max number of bytes we can get at once
 
@@ -30,22 +28,29 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  FILE *outFP = stdout;
-  if (argc == 4){
-    outFP = fopen(argv[3], "w"); //Open that file for appending
+  FILE *outFP = stdout;//By default, we write to standard output
+
+  //Otherwise, we have an alternative outfile
+  if (argc == 4){ 
+    outFP = fopen(argv[3], "a");
     assert(outFP != NULL);
   }
 
-  int sockfd, nRecvdBytes, addrResolveResult;
-  struct addrinfo hints, *servinfo, *p;
+  int sockfd, 
+      nRecvdBytes, 
+      addrResolveResult;
+
+  struct addrinfo hints, 
+	 *servinfo, *p;
+
   char s[INET6_ADDRSTRLEN];
 
   char *host = argv[1];
   char *port = argv[2];
 
-  memset(&hints, 0, sizeof hints);
+  memset(&hints, 0, sizeof(hints));
 
-  hints.ai_family = AF_UNSPEC; //ipv4/6 agnostic
+  hints.ai_family = AF_UNSPEC; //IPv4/6 agnostic
   hints.ai_socktype = SOCK_STREAM;
 
   if ((addrResolveResult = getaddrinfo(host, port, &hints, &servinfo)) != 0) {
@@ -61,7 +66,7 @@ int main(int argc, char *argv[]){
 
     if (connect(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
       close(sockfd);
-      perror("Client failed to connect through a socket");
+      perror("Client failed to connect through socket");
       continue;
     }
     break;
@@ -73,7 +78,7 @@ int main(int argc, char *argv[]){
   }
 
   inet_ntop(
-    p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof s
+    p->ai_family, get_in_addr((struct sockaddr *)p->ai_addr), s, sizeof(s)
   );
 
   freeaddrinfo(servinfo);

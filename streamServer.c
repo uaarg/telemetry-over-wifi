@@ -32,17 +32,23 @@ int main(int argc, char *args[]){
   char *filePath = args[2];
   fprintf(stderr, "source file: %s\n",filePath);
 
-  //Ensuring that directories aren't passed in
   struct stat statInfo;
-  stat(filePath, &statInfo);
-  if (S_ISDIR(statInfo.st_mode)){
+  if (stat(filePath, &statInfo) != 0){;
+    fprintf(stderr, "%s is an invalid/non-existant path. Exiting..\n", filePath);
+    exit(-2);
+  }
+
+  //Ensuring that directories aren't passed in
+  else if (S_ISDIR(statInfo.st_mode)){
     fprintf(stderr,"%s is a directory. Use files or pipes\n",filePath);
     exit(4);
   }
 
+  printf("st %d\n", statInfo.st_mode);
+  char *targetPort = args[1];
   FILE *ifp = fopen(filePath,"r");
-  runServer(args[1],ifp);
-
-  fclose(ifp);
+  runServer(targetPort, ifp);
+  
+  if (ifp != NULL) fclose(ifp);
   return 0;
 }
