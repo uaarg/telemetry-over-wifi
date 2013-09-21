@@ -16,30 +16,13 @@
   #include <termios.h>
 #endif
 
+  #include "ioLib.h"
+  #include "dataTypes.h"
+  #include "connections.h"
   #include "platformHandler.h" 
 
-  #define raiseWarning(warning){\
-    fprintf(stderr,\
-      "\033[31mWarning %s on line %d in function \"%s\" in file %s\n\033[00m",\
-      warning, __LINE__, __func__, __FILE__\
-    );\
-  }\
-  
   #define BACKLOG 20 //How many pending connections queue will hold
   #define BUF_SIZ 60 //Arbitrary size here
-
-  static speed_t TARGET_BAUD_RATE = B57600;
-  int POLL_TIMEOUT_SECS = 0;
-  int POLL_TIMEOUT_USECS = 1000;
-
-  typedef enum{
-    False=0, True=1
-  }Bool;
-
-  typedef enum{
-    RECV_MODE, SEND_MODE
-  }serverSwitch;
-
   void terminate(){
     //Will define closing of open resources eg sockets, file descriptors etc
     fprintf(stderr, "Exiting...\n");
@@ -70,38 +53,7 @@
     while(waitpid(-1, NULL, WNOHANG) > 0);
   }
 
-  //Get sockAddr, either IPv4 or IPv6 depending on field sa->sa_family
-  void *get_in_addr(struct sockaddr *sa){
-    if (sa->sa_family == AF_INET) {
-      return &(((struct sockaddr_in*)sa)->sin_addr);
-    }
-    else{
-      return &(((struct sockaddr_in6*)sa)->sin6_addr);
-    }
-  }
-
-  int getChars(FILE *fp, char *destStr, const int len){
-    if (destStr == NULL){
-      raiseWarning("NULL string storage passed in.");
-      return -1;
-    }
-    else if (fp == NULL){
-      raiseWarning("NULL file pointer cannot be read from.");
-      return -1;
-    }
-
-    char c;
-    int nAdded = 0;
-    for (nAdded=1; nAdded <= len; ++nAdded){
-      c = getc(fp);
-      if (c == EOF) break;
-      destStr[nAdded-1] = c;
-    }
-
-    return nAdded;
-  }
-
-  int runServer(const char *port, FILE *ifp){
+  int runServer(const word port, FILE *ifp){
     if (ifp == NULL){
       raiseWarning("Null file pointer passed in");
       return -2;
@@ -111,10 +63,9 @@
 
     int  sockfd, new_fd; //Listen on sock_fd, the new connection on new_fd
     struct addrinfo hints, *servinfo, *p;
-
     struct sockaddr_storage their_addr; // connector's address information
-
     socklen_t sin_size;
+
     struct sigaction sa;
     Bool YES = True;
 
@@ -199,8 +150,8 @@
 
     //Setting up resources to poll for incoming data through input-terminal
     struct timeval timerStruct;
-    timerStruct.tv_sec = POLL_TIMEOUT_SECS;
-    timerStruct.tv_usec = POLL_TIMEOUT_USECS;
+    timerStruct.tv_sec = POLL_TIMEOUT_SECS_SERVER;
+    timerStruct.tv_usec = POLL_TIMEOUT_USECS_SERVER;
 
     fd_set descriptorSet;
     FD_ZERO(&descriptorSet);
@@ -209,19 +160,23 @@
     select(convertedFD+1, &descriptorSet, NULL, NULL, &timerStruct);
 
     //Let's modify the input terminals settings to match our specs 
-    struct termios tNew, tSav;
-    tcgetattr(convertedFD, &tNew);
-    tcgetattr(convertedFD, &tSav);
 
+    TermPair termPair;
+    initTermPair(convertedFD, &termPair);
     //Changing the terminal's I/O speeds
-    cfsetispeed(&tNew, TARGET_BAUD_RATE);
-    cfsetospeed(&tNew, TARGET_BAUD_RATE);
+    
+    BaudRatePair baudP;
+    initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
 
-    tNew.c_lflag &= ~(ICANON | ECHO | ECHOE);
-    tNew.c_oflag &= ~OPOST;
+    if (setBaudRate(&termPair, baudP) != True){
+      raiseWarning("Failed to change baud rate");
+    }
+
+    termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
+    termPair.newTerm.c_oflag &= ~OPOST;
 
     //Time to flush our settings to the file descriptor
-    tcsetattr(convertedFD, TCSANOW, &tNew);
+    tcsetattr(convertedFD, TCSANOW, &(termPair.newTerm));
     
     while (1){
       sendBuf = (char *)malloc(sizeof(char)*BUF_SIZ);
@@ -260,7 +215,7 @@
     //Clean up here
 
     //Reverting the input terminal's settings
-    tcsetattr(convertedFD, TCSANOW, &tSav);
+    tcsetattr(convertedFD, TCSANOW, &(termPair.origTerm));
     close(new_fd);
 
     return 0;

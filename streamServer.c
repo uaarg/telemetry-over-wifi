@@ -3,6 +3,7 @@
   streamServer.c
 */
 #include <sys/stat.h>
+
 #include "redServer.h"
 
 #define USAGE_INFO "./streamer <port> <pathToDataSource>"
