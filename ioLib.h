@@ -42,15 +42,4 @@
   //revert the file descriptor's settings. newTerm will be the volatile 
   //attribute storing any changes made.
   void initTermPair(const int, TermPair *);
-
-  //Handler for outgoing data to be pushed to the connected end of
-  //a client socket
-  void *outMsgHandler(void *);
-  
-  //Handler for incoming data pushed into a client socket
-  void *inMsgHandler(void *);
-
-  //Thread-based function to manage sending and receiving of data
-  //based off the states 'RECEIVING' and 'SENDING'
-  void *msgTransit(void *);
 #endif
