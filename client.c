@@ -1,6 +1,6 @@
 /*
   Author: Emmanuel Odeke <odeke@ualberta.ca>
-  UDP client: sample usage:
+  Client: sample usage:
 */
 #include <stdio.h>
 #include <errno.h>
@@ -10,8 +10,10 @@
 #include <assert.h>
 
 #include "platformHandler.h"
+#define MAX_BUF_LENGTH 100 //Max number of bytes we can get at once
 
-#define MAX_BUF_LENGTH 100 // max number of bytes we can get at once
+int POLL_TIMEOUT_SECS = 2;
+int POLL_TIMEOUT_USECS = 500000;
 
 //Get sockaddr, IPv4 or IPv6:
 void *get_in_addr(struct sockaddr *sa){
@@ -51,7 +53,7 @@ int main(int argc, char *argv[]){
   memset(&hints, 0, sizeof(hints));
 
   hints.ai_family = AF_UNSPEC; //IPv4/6 agnostic
-  hints.ai_socktype = SOCK_STREAM;
+  hints.ai_socktype = SOCK_STREAM; //Bi-directional
 
   if ((addrResolveResult = getaddrinfo(host, port, &hints, &servinfo)) != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrResolveResult));
@@ -85,14 +87,18 @@ int main(int argc, char *argv[]){
 
   printf("client: connecting to %s\n", s);
 
+  //Setting up infrastructure to poll the data source socket
   struct timeval tv;
   fd_set monitorFDS;
-  tv.tv_sec = 2;
-  tv.tv_usec = 500000;
+
+  tv.tv_sec = POLL_TIMEOUT_SECS;
+  tv.tv_usec = POLL_TIMEOUT_USECS;
+
   FD_ZERO(&monitorFDS);
   FD_SET(sockfd,&monitorFDS);
 
   select(sockfd+1, &monitorFDS, NULL, NULL, &tv);
+
   int bufferedReads = 0;
   long long int totalBytesIn=0;
 
