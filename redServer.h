@@ -29,8 +29,8 @@
   #define BUF_SIZ 60 //Arbitrary size here
 
   static speed_t TARGET_BAUD_RATE = B57600;
-  int MSG_TIMEOUT_SECS = 0;
-  int MSG_TIMEOUT_USECS = 1000;
+  int POLL_TIMEOUT_SECS = 0;
+  int POLL_TIMEOUT_USECS = 1000;
 
   typedef enum{
     False=0, True=1
@@ -199,8 +199,8 @@
 
     //Setting up resources to poll for incoming data through input-terminal
     struct timeval timerStruct;
-    timerStruct.tv_sec = MSG_TIMEOUT_SECS;
-    timerStruct.tv_usec = MSG_TIMEOUT_USECS;
+    timerStruct.tv_sec = POLL_TIMEOUT_SECS;
+    timerStruct.tv_usec = POLL_TIMEOUT_USECS;
 
     fd_set descriptorSet;
     FD_ZERO(&descriptorSet);
