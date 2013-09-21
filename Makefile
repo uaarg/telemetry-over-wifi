@@ -16,16 +16,23 @@ endif
 all:	Makefile $(CLIENT_EXEC) $(SERVER_EXEC)
 	#
 
-LIBS := $(SYS_LIBS)
+LIBS := $(SYS_LIBS) -pthread
 CC := gcc
 CC_FLAGS := -Wall
 
-$(CLIENT_EXEC):	      Makefile client.c
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) client.c -o $(CLIENT_EXEC)
+$(CLIENT_EXEC):	      Makefile client.c ioLib connection
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) ioLib.o client.c connections.o -o $(CLIENT_EXEC)
 
-$(SERVER_EXEC):	      Makefile redServer.h streamServer.c
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) streamServer.c -o $(SERVER_EXEC)
+$(SERVER_EXEC):	      Makefile redServer.h streamServer.c ioLib connection
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) ioLib.o streamServer.c connections.o -o $(SERVER_EXEC)
+
+ioLib:	      ioLib.h ioLib.c dataTypes.h
+	$(CC) $(CC_FLAGS) -c ioLib.c -o ioLib.o
+
+connection:	    connections.h connections.c
+	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c connections.c -o connections.o
 
 clean:
+	$(RM) *.o
 	test -f $(SERVER_EXEC) && $(RM) $(SERVER_EXEC);
 	test -f $(CLIENT_EXEC) && $(RM) $(CLIENT_EXEC);
