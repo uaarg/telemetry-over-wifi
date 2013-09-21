@@ -20,19 +20,19 @@ LIBS := $(SYS_LIBS) -pthread
 CC := gcc
 CC_FLAGS := -Wall
 
-$(CLIENT_EXEC):	      Makefile client.c ioLib connection
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) ioLib.o client.c connections.o -o $(CLIENT_EXEC)
+$(CLIENT_EXEC):	      Makefile src/client.c ioLib connection
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/ioLib.o exec/connections.o src/client.c -o exec/$(CLIENT_EXEC)
 
-$(SERVER_EXEC):	      Makefile redServer.h streamServer.c ioLib connection
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) ioLib.o streamServer.c connections.o -o $(SERVER_EXEC)
+$(SERVER_EXEC):	      Makefile include/redServer.h src/streamServer.c ioLib connection
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/ioLib.o src/streamServer.c exec/connections.o -o exec/$(SERVER_EXEC)
 
-ioLib:	      ioLib.h ioLib.c dataTypes.h
-	$(CC) $(CC_FLAGS) -c ioLib.c -o ioLib.o
+ioLib:	      include/ioLib.h src/ioLib.c include/dataTypes.h
+	$(CC) $(CC_FLAGS) -c src/ioLib.c -o exec/ioLib.o
 
-connection:	    connections.h connections.c
-	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c connections.c -o connections.o
+connection:	    include/connections.h src/connections.c
+	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c src/connections.c -o exec/connections.o
 
 clean:
-	$(RM) *.o
-	test -f $(SERVER_EXEC) && $(RM) $(SERVER_EXEC);
-	test -f $(CLIENT_EXEC) && $(RM) $(CLIENT_EXEC);
+	$(RM) exec/*.o
+	test -f exec/$(SERVER_EXEC) && $(RM) exec/$(SERVER_EXEC);
+	test -f exec/$(CLIENT_EXEC) && $(RM) exec/$(CLIENT_EXEC);
