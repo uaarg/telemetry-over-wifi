@@ -6,7 +6,8 @@ Code supporting redundant links by allowing telemetry to be sent to the ground s
 
 Usage
 =====
-    make
+    make && cd exec
+
     To spawn a server:
       ./server <port> <pathToDataSource>
 
