@@ -10,10 +10,12 @@ else
 	SERVER_EXEC = server
 	RM = rm -f
 endif
+
 #Credit to Konrad Lindenbach <konrad.lindenbach@gmail.com>
 #for the above cross-platform compilation clauses
 
 all:	Makefile $(CLIENT_EXEC) $(SERVER_EXEC)
+	echo $(OS)
 	#
 
 LIBS := $(SYS_LIBS) -pthread

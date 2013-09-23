@@ -10,18 +10,29 @@
 #include "../include/platformHandler.h"
 
 int main(int argc, char *argv[]){
-
   if (argc < 3) {
     fprintf(stderr,"usage: ./client <hostname> <port>\n");
     exit(1);
   }
 
-  FILE *outFP = stdout;//By default, we write to standard output
+  FILE *outFP = stdout;//By default, we'll read from standard output
 
-  //Otherwise, we have an alternative outfile
+  //Otherwise, we have an alternative infile for reading and writing
   if (argc == 4){ 
     outFP = fopen(argv[3], "r+w");
-    assert(outFP != NULL);
+    if (outFP == NULL){ 
+      //The requested file doesn't exist so we'll create one
+      outFP = fopen(argv[3], "w");
+      if (outFP == NULL){
+       //Last line of defense either permission problems or 
+       //too many files got created
+       fprintf(
+	stderr, "\033[31mCould not create file %s\n%s\033\n[00m", 
+	argv[3], FILE_CREATION_FAILURE_MSG 
+       );
+       exit(-1);
+      }
+    }
   }
 
   word hostName = argv[1];
@@ -35,28 +46,27 @@ int main(int argc, char *argv[]){
     exit(-1);
   }
 
-  //Setting up infrastructure to poll the data source socket
-  //struct timeval tv;
+  int outfd = fileno(outFP);
 
+  /*
+  //Uncomment to enable receiving mode
   pthread_t recvTh;
   fdPair recvfDPair;
-  int outfd = fileno(outFP);
   recvfDPair.fromFD = sockfd;
   recvfDPair.toFD = outfd;
   recvfDPair.state = RECEIVING;
   pthread_create(&recvTh, NULL, msgTransit, &recvfDPair);
   //pthread_join(recvTh, NULL);
+  */
 
-  //pthread_t sendTh; 
-  //fdPair sendfDPair; 
-  //sendfDPair.toFD = sockfd;
-  //sendfDPair.fromFD = outfd;
-  //sendfDPair.state = SENDING;
-  //pthread_create(&sendTh, NULL, msgTransit, &sendfDPair);
-
-  while (1){
-    sleep(1);
-  }
+  pthread_t sendTh; 
+  fdPair sendfDPair; 
+  sendfDPair.toFD = sockfd;
+  sendfDPair.fromFD = outfd;
+  sendfDPair.state = SENDING;
+  sendfDPair.bufSize = MAX_BUF_LENGTH;
+  pthread_create(&sendTh, NULL, msgTransit, &sendfDPair);
+  pthread_join(sendTh, NULL);
 
   fflush(outFP);
   fclose(outFP);

@@ -8,26 +8,40 @@
 #include "../include/ioLib.h"
 #include "../include/constants.h"
 
-int getChars(FILE *fp, word destStr, const int len){
+int getChars(int fd, word destStr, const int len, int *eofState){
   if (destStr == NULL){
     raiseWarning("NULL string storage passed in.");
     return -1;
   }
 
-  else if (fp == NULL){
-    raiseWarning("NULL file pointer cannot be read from.");
+  
+  if (fd == ERROR_SOCKFD_VALUE){
+    raiseWarning("NULL file descriptor cannot be read from.");
     return -1;
   }
 
   char c;
   int nAdded = 0;
-  for (nAdded=1; nAdded <= len; ++nAdded){
-    c = getc(fp);
-    if (c == EOF) break;
-    destStr[nAdded-1] = c;
+  for (; nAdded < len; ++nAdded){
+    int readResult =read(fd, &c, 1);
+    if (readResult == 0){//EOF encountered
+      *eofState = True;
+      break;
+    }else if (readResult == -1) break; //A read error occured
+
+    destStr[nAdded] = c;
   }
 
+  if (nAdded) destStr[nAdded] = '\0';
   return nAdded;
+}
+
+Bool freeWord(word w){
+  if (w == NULL) return False;
+
+  free(w);
+
+  return True;
 }
 
 Bool initTBaudRatePair(

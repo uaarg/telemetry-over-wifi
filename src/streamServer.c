@@ -4,9 +4,11 @@
 */
 #include <sys/stat.h>
 
+#include <stdlib.h>
+#include <stdio.h>
 #include "../include/redServer.h"
 
-#define USAGE_INFO "./streamer <port> <pathToDataSource>"
+#define USAGE_INFO "./streamer <port> <dataStoragePath>"
 
 int main(int argc, char *args[]){
   if (argc != 3){
@@ -31,25 +33,20 @@ int main(int argc, char *args[]){
   }
 
   char *filePath = args[2];
-  fprintf(stderr, "source file: %s\n",filePath);
+  fprintf(stderr, "Outfile: %s\n",filePath);
 
   struct stat statInfo;
-  if (stat(filePath, &statInfo) != 0){;
-    fprintf(stderr, "%s is an invalid/non-existant path. Exiting..\n", filePath);
-    exit(-2);
-  }
-
   //Ensuring that directories aren't passed in
-  else if (S_ISDIR(statInfo.st_mode)){
+  if ((stat(filePath, &statInfo) == 0) && S_ISDIR(statInfo.st_mode)){
     fprintf(stderr,"%s is a directory. Use files or pipes\n",filePath);
     exit(4);
   }
 
-  printf("st %d\n", statInfo.st_mode);
   char *targetPort = args[1];
-  FILE *ifp = fopen(filePath,"r");
-  runServer(targetPort, ifp);
+
+  FILE *ofp = fopen(filePath,"w");
+  runServer(targetPort, ofp);
   
-  if (ifp != NULL) fclose(ifp);
+  if (ofp != NULL) fclose(ofp);
   return 0;
 }

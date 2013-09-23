@@ -1,6 +1,13 @@
 #ifndef _CONSTANTS_H
 #define _CONSTANTS_H
-  #define MAX_BUF_LENGTH 100 //Max number of bytes we can get at once
+  static const word FILE_CREATION_FAILURE_MSG = \
+	"Please check your file permissions or check for the restrictions on \
+	the number of files that can be opened at once";
+	
+  static const int BACKLOG = 20;//How many pending connections queue will hold
+  static const int BUF_SIZ = 60;//Arbitrary size here
+
+  static const int MAX_BUF_LENGTH = 100;//Max number of bytes we can get at once
   static const int MIN_PORT_VALUE = 0;
   static const int MAX_PORT_VALUE = 1<<16;
 

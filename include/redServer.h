@@ -20,13 +20,18 @@
   #include "dataTypes.h"
   #include "connections.h"
   #include "platformHandler.h" 
+  #include "constants.h"
 
-  #define BACKLOG 20 //How many pending connections queue will hold
-  #define BUF_SIZ 60 //Arbitrary size here
   void terminate(){
     //Will define closing of open resources eg sockets, file descriptors etc
     fprintf(stderr, "Exiting...\n");
     exit(-1);
+  }
+
+  void shutDown(){
+    //Will define proper shutdown of resources
+    fprintf(stderr, "Shutting down...\n");
+    exit(0);
   }
 
   static void sigHandler(int signalNum){
@@ -35,6 +40,11 @@
 	terminate();
 	break;
       }
+      case SIGTERM:{
+	shutDown();
+	break;
+      }
+	
       default:{
 	fprintf(stderr, "\033[31mUnhandled signal %d\n\033[00m", signalNum);
 	break;
@@ -145,8 +155,7 @@
     printf("server: got connection from %s\n", clientIP);
 
     //Setting up variables for the transaction
-    long long int totalSentByteCount = 0;
-    char *sendBuf = NULL;
+    long long int totalRecvteCount = 0;
 
     //Setting up resources to poll for incoming data through input-terminal
     struct timeval timerStruct;
@@ -162,7 +171,7 @@
     //Let's modify the input terminals settings to match our specs 
 
     TermPair termPair;
-    initTermPair(convertedFD, &termPair);
+    initTermPair(new_fd, &termPair);
     //Changing the terminal's I/O speeds
     
     BaudRatePair baudP;
@@ -176,46 +185,40 @@
     termPair.newTerm.c_oflag &= ~OPOST;
 
     //Time to flush our settings to the file descriptor
-    tcsetattr(convertedFD, TCSANOW, &(termPair.newTerm));
+    tcsetattr(new_fd, TCSANOW, &(termPair.newTerm));
     
     while (1){
-      sendBuf = (char *)malloc(sizeof(char)*BUF_SIZ);
-      int nRead = 0;
-      if (FD_ISSET(convertedFD, &descriptorSet)){ 
+      while (FD_ISSET(new_fd, &descriptorSet)){ 
 	//New data has come in the timer gets reset
-        nRead = getChars(ifp, sendBuf, BUF_SIZ);
+        //nRead = getChars(convertedFD, sendBuf, BUF_SIZ);
+	;
       }
 
-    #ifdef DEBUG
-      printf("rS %s\n", sendBuf);
-    #endif
+      word recvBuf = (word)malloc(sizeof(char)*MAX_BUF_LENGTH);
+      int recvByteCount = recv(new_fd, recvBuf, MAX_BUF_LENGTH-1, 0);
 
-      if (! nRead){
-      #ifdef DEBUG
-        raiseWarning("Failed to read in a character from");
-      #endif
+      if (recvByteCount == 0){ //Peer has performed an orderly shutdown
+	fflush(ifp);
+	raise(SIGTERM);//Hacky way of closing down our processes, to be refined
       }
 
-      int sentByteCount = send(new_fd, sendBuf, strlen(sendBuf), 0);
+      else if (recvByteCount == -1){  
+	perror("send");
+      }else{ 
+	totalRecvteCount += recvByteCount;
+	fwrite(recvBuf, sizeof(char), recvByteCount, ifp);
+	fflush(ifp);
+      }
 
-      if (sentByteCount == -1)  perror("send");
-      else totalSentByteCount += sentByteCount;
+      freeWord(recvBuf);
 
-      free(sendBuf);
-
-      fprintf(stderr, "Total bytes sent: %lld\r", totalSentByteCount);
-    }
-
-    printf("Done reading\n");
-
-    while (! feof(ifp)){
-      sleep(1);
+      fprintf(stderr, "Total bytes recvd: %lld\r", totalRecvteCount);
     }
 
     //Clean up here
 
     //Reverting the input terminal's settings
-    tcsetattr(convertedFD, TCSANOW, &(termPair.origTerm));
+    tcsetattr(new_fd, TCSANOW, &(termPair.origTerm));
     close(new_fd);
 
     return 0;

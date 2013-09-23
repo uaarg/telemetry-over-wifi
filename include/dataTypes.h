@@ -6,7 +6,11 @@
   typedef enum{
     False=0, True=1
   }Bool;
-  
+
+  typedef enum{
+    INT_FD, FILE_FD
+  }DescriptorState;  
+
   typedef enum{
     INVALID, SENDING, RECEIVING
   }DataState;

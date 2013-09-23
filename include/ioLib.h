@@ -14,8 +14,13 @@
   }
 
   //Load into argument 2, a character sequence/word, at most n characters
-  //read from the file pointer
-  int getChars(FILE *, word , const int);
+  //read from the file descriptor , argument 4 captures the state of reading ie
+  //whether EOF has been encountered or not
+  int getChars(int, word, const int, int *);
+
+  //Returns True if the argument to be free is not NULL, hence 
+  //can be freed False otherwise. Once freed, sets the arg to NULL
+  Bool freeWord(word);
 
   //Given the input and output baud rates as the arguments,
   //copy their values and save them in the 'BaudRatePair'

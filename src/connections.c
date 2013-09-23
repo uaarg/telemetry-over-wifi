@@ -1,5 +1,6 @@
 #include "../include/platformHandler.h"
 #include "../include/connections.h"
+#include <assert.h>
 
 void initBiSocket(BiSocket *sock){
   if (sock != NULL){
@@ -126,12 +127,7 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
   TermPair termPair;
   initTermPair(from, &termPair);
   //Changing the terminal's I/O speeds
-    
-  BaudRatePair baudP;
   initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
-  if (setBaudRate(&termPair, baudP) != True){
-    raiseWarning("Failed to change baud rate");
-  }
 
   termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
   termPair.newTerm.c_oflag &= ~OPOST;
@@ -140,42 +136,49 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
   tcsetattr(from, TCSANOW, &(termPair.newTerm));
 
   unsigned int BUF_SIZ = fDP->bufSize;
-  FILE *readFP = fdopen(from, "r"); 
+ 
+  int eofState = False; //Once set, EOF was encountered
   while (1){
     word sendBuf = (word)malloc(sizeof(char)*BUF_SIZ);
+    assert(sendBuf);
+
     int nRead = 0;
     if (FD_ISSET(from, &descriptorSet)){ 
       //New data has come in the timer gets reset
-      nRead = getChars(readFP, sendBuf, BUF_SIZ);
+      nRead = getChars(from, sendBuf, BUF_SIZ, &eofState);
+      if ((nRead == 0) && (eofState == True)){
+	if (sendBuf != NULL) freeWord(sendBuf);
+	printf("EOFFFFFFFFFFF HERE ");
+	break;
+      }
     }
 
     #ifdef DEBUG
-      printf("rS %s\n", sendBuf);
+      printf("%s", sendBuf);
     #endif
 
-      if (! nRead){
-      #ifdef DEBUG
-        raiseWarning("Failed to read in a character from");
-      #endif
+    if (! nRead){
+    #ifdef DEBUG
+      raiseWarning("Failed to read in a character from");
+    #endif
+    }else {
+      int sentByteCount = send(to, sendBuf, nRead, 0);
+
+      if (sentByteCount == -1)  perror("send");
+      else totalSentByteCount += sentByteCount;
     }
 
-    int sentByteCount = send(to, sendBuf, strlen(sendBuf), 0);
-
-    if (sentByteCount == -1)  perror("send");
-    else totalSentByteCount += sentByteCount;
-
-    free(sendBuf);
-
+    //Finally after all required data has been sent, check to see if
+    //our last read produced End of File (EOF)
     fprintf(
       stderr, "\033[3mTotal bytes sent: %lld\033[00m\r", totalSentByteCount
     );
+
+    freeWord(sendBuf);
+    if (eofState == True) break;
   }
 
   printf("Done reading\n");
-
-  while (! feof(readFP)){
-    sleep(1);
-  }
 
   //Clean up here
 
@@ -199,8 +202,6 @@ long long int recvData(fdPair *fDP, struct timeval tv){
   int bufferedReads = 0;
   long long int totalBytesIn=0, nRecvdBytes=0;
 
-  FILE *outFP = fdopen(toFD, "w");
-
   while (1){
     if (FD_ISSET(sockfd, &monitorFDS)){
     #ifdef DEBUG
@@ -222,12 +223,15 @@ long long int recvData(fdPair *fDP, struct timeval tv){
 
     Bool breakTrue = nRecvdBytes ? False : True;
     if (breakTrue){
-      free(buf);
+      freeWord(buf);
       break;
     }
     
-    fprintf(outFP, "%s", buf);
-    fflush(outFP);
+    ssize_t expectedWriteResult = strlen(buf); 
+    if (write(toFD, buf, expectedWriteResult) != expectedWriteResult){
+      raiseWarning("Write error");
+    } 
+
     free(buf);
     ++bufferedReads;
     totalBytesIn += nRecvdBytes;
