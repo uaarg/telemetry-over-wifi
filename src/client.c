@@ -11,7 +11,7 @@
 
 int main(int argc, char *argv[]){
   if (argc < 3) {
-    fprintf(stderr,"usage: ./client <hostname> <port>\n");
+    fprintf(stderr,"usage: ./client <hostname> <port> [<dataSourcePath>]\n");
     exit(1);
   }
 
