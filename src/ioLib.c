@@ -37,6 +37,9 @@ int getChars(int fd, word destStr, const int len, int *eofState){
 }
 
 Bool freeWord(word w){
+#ifdef DEBUG
+  printf("%s\n",__func__);
+#endif
   if (w == NULL) return False;
 
   free(w);

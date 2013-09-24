@@ -140,7 +140,7 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
   int eofState = False; //Once set, EOF was encountered
   while (1){
     word sendBuf = (word)malloc(sizeof(char)*BUF_SIZ);
-    assert(sendBuf);
+    assert(sendBuf != NULL);
 
     int nRead = 0;
     if (FD_ISSET(from, &descriptorSet)){ 
@@ -174,7 +174,10 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
       stderr, "\033[3mTotal bytes sent: %lld\033[00m\r", totalSentByteCount
     );
 
-    if (sendBuf != NULL) freeWord(sendBuf);
+    if (sendBuf != NULL){
+      freeWord(sendBuf);
+    }
+
     if (eofState == True) break;
   }
 
