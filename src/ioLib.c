@@ -40,7 +40,7 @@ Bool freeWord(word w){
   if (w == NULL) return False;
 
   free(w);
-
+  w = NULL;
   return True;
 }
 

@@ -174,7 +174,7 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
       stderr, "\033[3mTotal bytes sent: %lld\033[00m\r", totalSentByteCount
     );
 
-    freeWord(sendBuf);
+    if (sendBuf != NULL) freeWord(sendBuf);
     if (eofState == True) break;
   }
 
