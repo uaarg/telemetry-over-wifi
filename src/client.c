@@ -10,66 +10,51 @@
 #include "../include/platformHandler.h"
 
 int main(int argc, char *argv[]){
-  if (argc < 3) {
-    fprintf(stderr,"usage: ./client <hostname> <port> [<dataSourcePath>]\n");
+  if (argc < 4) {
+    fprintf(stderr,"usage: ./client <hostname> <port> <inputFile>\n");
     exit(1);
   }
 
-  FILE *outFP = stdout;//By default, we'll read from standard output
-
-  //Otherwise, we have an alternative infile for reading and writing
-  if (argc == 4){ 
-    outFP = fopen(argv[3], "r+w");
-    if (outFP == NULL){ 
-      //The requested file doesn't exist so we'll create one
-      outFP = fopen(argv[3], "w");
-      if (outFP == NULL){
-       //Last line of defense either permission problems or 
-       //too many files got created
-       fprintf(
-	stderr, "\033[31mCould not create file %s\n%s\033\n[00m", 
-	argv[3], FILE_CREATION_FAILURE_MSG 
-       );
-       exit(-1);
-      }
-    }
+  FILE *inFilePointer = fopen(argv[3], "r");
+  if (inFilePointer == NULL) {
+    fprintf(stderr, "Error reading input file\n");
+    exit(-1);
   }
+  int infd = fileno(inFilePointer);
 
-  word hostName = argv[1];
+
+  word hostname = argv[1];
   word port = argv[2];
 
-  int sockfd; 
-
-  sockfd = socketConnection(hostName, port);
+  int sockfd = socketConnection(hostname, port);
   if (sockfd == ERROR_SOCKFD_VALUE){
-    fprintf(stderr, "Connection failed\n");
+    fprintf(stderr, "Error while opening socket\n");
     exit(-1);
   }
 
-  int outfd = fileno(outFP);
 
   /*
   //Uncomment to enable receiving mode
-  pthread_t recvTh;
-  fdPair recvfDPair;
+  pthread_t receiveThread;
+  fileDescriptorPair recvfDPair;
   recvfDPair.fromFD = sockfd;
-  recvfDPair.toFD = outfd;
+  recvfDPair.toFD = infd;
   recvfDPair.state = RECEIVING;
-  pthread_create(&recvTh, NULL, msgTransit, &recvfDPair);
-  //pthread_join(recvTh, NULL);
+  pthread_create(&recvThread, NULL, msgTransit, &recvfDPair);
+  //pthread_join(recvThread, NULL);
   */
 
-  pthread_t sendTh; 
-  fdPair sendfDPair; 
-  sendfDPair.toFD = sockfd;
-  sendfDPair.fromFD = outfd;
-  sendfDPair.state = SENDING;
-  sendfDPair.bufSize = MAX_BUF_LENGTH;
-  pthread_create(&sendTh, NULL, msgTransit, &sendfDPair);
-  pthread_join(sendTh, NULL);
+  pthread_t sendThread; 
+  fdPair sendFilePair; 
+  sendFilePair.toFD = sockfd;
+  sendFilePair.fromFD = infd;
+  sendFilePair.state = SENDING;
+  sendFilePair.bufSize = MAX_BUF_LENGTH;
+  pthread_create(&sendThread, NULL, msgTransit, &sendFilePair);
+  pthread_join(sendThread, NULL);
 
-  fflush(outFP);
-  fclose(outFP);
+  fflush(inFilePointer);
+  fclose(inFilePointer);
   close(sockfd);
   return 0;
 }

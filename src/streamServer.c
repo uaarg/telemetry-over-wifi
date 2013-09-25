@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "../include/redServer.h"
 
-#define USAGE_INFO "./streamer <port> <dataStoragePath>"
+#define USAGE_INFO "./server <port> <dataStoragePath>"
 
 int main(int argc, char *args[]){
   if (argc != 3){
@@ -23,9 +23,6 @@ int main(int argc, char *args[]){
     raiseWarning("Please enter an integer between [0,65536] for the port");
     exit(2);
   }
-#ifdef DEBUG
-  fprintf(stderr, "Port selected: %d\n", portNumber);
-#endif
   if (portNumber > (1<<16)){
     fprintf(stderr, "%d is an invalid port number. Range is [0,65536]\n",
 	portNumber);

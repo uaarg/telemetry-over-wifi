@@ -30,8 +30,8 @@ int socketConnection(const word TARGET_HOST, const word PORT){
 
   memset(&hints, 0, sizeof(hints));
 
-  hints.ai_family = AF_UNSPEC; //IPv4/6 agnostic
-  hints.ai_socktype = SOCK_STREAM; //Bi-directional
+  hints.ai_family = AF_UNSPEC; //IPv4.6 agnostic
+  hints.ai_socktype = SOCK_DGRAM; // UDP
 
   addrResolveResult=getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);
   if (addrResolveResult != 0){
