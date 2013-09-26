@@ -1,16 +1,16 @@
-#include "../include/platformHandler.h"
-#include "../include/connections.h"
 #include <assert.h>
-
 #include <signal.h> 
 #include <stdio.h>
 #include <string.h>
+
+#include "../include/platformHandler.h"
 
 #ifdef UNIX
   #include <termios.h>
 #endif
 
 #include "../include/ioLib.h"
+#include "../include/polling.h"
 #include "../include/sigHandling.h"
 #include "../include/dataTypes.h"
 #include "../include/connections.h"
