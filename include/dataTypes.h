@@ -3,7 +3,13 @@
   #include <stdio.h>
   #include <termios.h>
 
+  typedef unsigned int uint32;
+
   typedef long long int LLInt;
+
+  typedef enum{
+    LT=-1, EQ=0, GT=1
+  }Comparison;
 
   typedef enum{
     False=0, True=1
@@ -41,4 +47,20 @@
     BaudRatePair baudRatePair;
     int fd;
   }TermPair;
+
+  //Structure to enable polling and retrying of functions
+  typedef struct{
+    void *(*funcToRun)(void *data);
+    void *arg;
+    void *errorValue;
+    void *savSuccess; //Storage for success value
+    double timeOut;
+    uint32 tryCount;
+    Comparison (*valComp)(void *, void *);
+  }pollThStruct;
+
+  typedef struct{
+    word port;
+    word hostName;
+  }portHostStruct;
 #endif

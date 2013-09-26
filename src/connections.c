@@ -30,6 +30,14 @@ void *get_in_addr(struct sockaddr *sa){
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
+void *socketViaStruct(const void *pHStruct){
+  portHostStruct pHSt = *(portHostStruct *)pHStruct;
+  int *sockResult = (int *)malloc(sizeof(int));
+  *sockResult = socketConnection(pHSt.hostName, pHSt.port);
+
+  return (void *)sockResult;
+}
+
 int socketConnection(const word TARGET_HOST, const word PORT){
   if (TARGET_HOST == NULL) return ERROR_SOCKFD_VALUE;
 
@@ -88,6 +96,7 @@ int socketConnection(const word TARGET_HOST, const word PORT){
 void *msgTransit(void *data){
   fdPair *fdData = (fdPair *)data;
 
+  printf("|N MSG TRANSIT\n");
   if (fdData == NULL){
     raiseWarning("NULL fdData passed in");
     return NULL;
@@ -201,8 +210,10 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
     if (eofState == True) break;
   }
 
-  printf("Done reading\n");
+  printf("\n");
+  clearCursorLine(stdout);
 
+  printf("Done reading\n");  
   //Clean up here
 
   //Reverting the input terminal's settings
@@ -411,6 +422,7 @@ int runServer(const word port, FILE *ifp){
 
     freeWord(recvBuf);
 
+    
     fprintf(stderr, "Total bytes recvd: %lld\r", totalRecvteCount);
   }
 

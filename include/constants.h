@@ -1,5 +1,6 @@
 #ifndef _CONSTANTS_H
 #define _CONSTANTS_H
+  static const unsigned int INIT_TRY_COUNT = 0;
   static const word FILE_CREATION_FAILURE_MSG = \
 	"Please check your file permissions or check for the restrictions on \
 	the number of files that can be opened at once";
@@ -17,7 +18,7 @@
   static const int POLL_TIMEOUT_SECS_CLIENT = 2;
   static const int POLL_TIMEOUT_USECS_CLIENT = 500000;
 
-  static const short ERROR_SOCKFD_VALUE = -1;
+  static const int ERROR_SOCKFD_VALUE = -1;
   static const int ERROR_SETATTR_RESULT = -1;
 
   static const speed_t ERROR_BAUD_RATE = -1;

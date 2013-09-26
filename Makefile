@@ -22,11 +22,11 @@ LIBS := $(SYS_LIBS) -pthread
 CC := gcc
 CC_FLAGS := -Wall
 
-$(CLIENT_EXEC):	      Makefile src/client.c ioLib connection
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/connections.o src/client.c -o exec/$(CLIENT_EXEC)
+$(CLIENT_EXEC):	      Makefile src/client.c ioLib connection polling
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
 
-$(SERVER_EXEC):	      Makefile src/streamServer.c ioLib connection
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/connections.o  src/streamServer.c -o exec/$(SERVER_EXEC)
+$(SERVER_EXEC):	      Makefile src/streamServer.c ioLib connection polling
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
 
 connection:	    include/connections.h src/connections.c sigHandling ioLib
 	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c src/connections.c -o exec/connections.o
@@ -37,6 +37,10 @@ ioLib:	      include/ioLib.h src/ioLib.c include/dataTypes.h
 
 sigHandling:  include/sigHandling.h src/sigHandling.c include/dataTypes.h ioLib
 	$(CC) $(CC_FLAGS) -c src/sigHandling.c -o exec/sigHandling.o
+
+
+polling:      include/polling.h include/constants.h src/polling.c
+	$(CC) $(CC_FLAGS) -c src/polling.c -o exec/polling.o
 
 clean:
 	$(RM) exec/*.o

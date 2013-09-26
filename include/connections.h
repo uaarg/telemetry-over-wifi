@@ -23,6 +23,10 @@
   //Takes args: HostName, PORT both words/character sequences
   int socketConnection(const word, const word);
 
+  //Given a struct containing hostName and port as attributes
+  //invoke and return the result from socketConnection(...)
+  void *socketViaStruct(const void *);
+
   long long int sendData(fdPair *, struct timeval);
 
   long long int recvData(fdPair *, struct timeval);

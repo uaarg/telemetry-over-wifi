@@ -6,6 +6,7 @@
 #include <pthread.h>
 
 #include "../include/ioLib.h"
+#include "../include/polling.h"
 #include "../include/connections.h"
 #include "../include/platformHandler.h"
 
@@ -22,12 +23,26 @@ int main(int argc, char *argv[]){
   }
   int infd = fileno(inFilePointer);
 
-
   word hostname = argv[1];
   word port = argv[2];
 
-  int sockfd = socketConnection(hostname, port);
-  if (sockfd == ERROR_SOCKFD_VALUE){
+  pollThStruct pollTST;
+  initPollThStruct(&pollTST, 1, (void *)&ERROR_SOCKFD_VALUE, intPtrComp);
+ 
+  portHostStruct pHStruct; 
+  pHStruct.hostName = hostname;
+  pHStruct.port = port;
+
+  pollTST.arg = &pHStruct;
+  pollTST.funcToRun = socketViaStruct;
+
+  pollTill(&pollTST);
+
+  int *sockfd = (int *)pollTST.savSuccess;
+
+  printf("socKFD %d\n", *sockfd);
+  if (*sockfd == ERROR_SOCKFD_VALUE){
+    if (sockfd != NULL) free(sockfd);
     fprintf(stderr, "Error while opening socket\n");
     exit(-1);
   }
@@ -45,11 +60,13 @@ int main(int argc, char *argv[]){
   */
 
   pthread_t sendThread; 
+
   fdPair sendFilePair; 
-  sendFilePair.toFD = sockfd;
   sendFilePair.fromFD = infd;
+  sendFilePair.toFD = *sockfd;
   sendFilePair.state = SENDING;
   sendFilePair.bufSize = MAX_BUF_LENGTH;
+
   pthread_create(&sendThread, NULL, msgTransit, &sendFilePair);
 
   LLInt *totalTransactionCount = NULL;
@@ -60,7 +77,9 @@ int main(int argc, char *argv[]){
 
   fflush(inFilePointer);
   fclose(inFilePointer);
-  close(sockfd);
+  close(*sockfd);
+
+  //if (sockfd != NULL) free(sockfd);
 
   return 0;
 }
