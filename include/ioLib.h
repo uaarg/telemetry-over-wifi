@@ -13,6 +13,10 @@
     );\
   }
 
+  //Clears the line that the head of the file's reader is currently positioned
+  //Performs a flush operation on the file after the clearing
+  void clearCursorLine(FILE *);
+
   //Load into argument 2, a character sequence/word, at most n characters
   //read from the file descriptor , argument 4 captures the state of reading ie
   //whether EOF has been encountered or not

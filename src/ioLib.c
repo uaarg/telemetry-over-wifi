@@ -8,6 +8,15 @@
 #include "../include/ioLib.h"
 #include "../include/constants.h"
 
+void clearCursorLine(FILE *screen){
+  FILE *targetScreen = screen;
+  if (targetScreen == NULL)
+    targetScreen = stdout;
+
+  fprintf(targetScreen, "%c[2K\n", 27);
+  fflush(targetScreen);
+}
+
 int getChars(int fd, word destStr, const int len, int *eofState){
   if (destStr == NULL){
     raiseWarning("NULL string storage passed in.");
