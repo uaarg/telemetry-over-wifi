@@ -3,6 +3,8 @@
   #include <stdio.h>
   #include <termios.h>
 
+  typedef long long int LLInt;
+
   typedef enum{
     False=0, True=1
   }Bool;

@@ -6,7 +6,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "../include/redServer.h"
+
+#include "../include/connections.h"
 
 #define USAGE_INFO "./server <port> <dataStoragePath>"
 

@@ -51,10 +51,16 @@ int main(int argc, char *argv[]){
   sendFilePair.state = SENDING;
   sendFilePair.bufSize = MAX_BUF_LENGTH;
   pthread_create(&sendThread, NULL, msgTransit, &sendFilePair);
-  pthread_join(sendThread, NULL);
+
+  LLInt *totalTransactionCount = NULL;
+  //Let's get back the number of bytes transferred
+  pthread_join(sendThread, (void *)totalTransactionCount);
+
+  if (totalTransactionCount != NULL) free(totalTransactionCount);
 
   fflush(inFilePointer);
   fclose(inFilePointer);
   close(sockfd);
+
   return 0;
 }

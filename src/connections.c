@@ -2,6 +2,21 @@
 #include "../include/connections.h"
 #include <assert.h>
 
+#include <signal.h> 
+#include <stdio.h>
+#include <string.h>
+
+#ifdef UNIX
+  #include <termios.h>
+#endif
+
+#include "../include/ioLib.h"
+#include "../include/sigHandling.h"
+#include "../include/dataTypes.h"
+#include "../include/connections.h"
+#include "../include/platformHandler.h" 
+#include "../include/constants.h"
+
 void initBiSocket(BiSocket *sock){
   if (sock != NULL){
     memset(sock, ERROR_SOCKFD_VALUE, sizeof(sock));
@@ -22,19 +37,17 @@ int socketConnection(const word TARGET_HOST, const word PORT){
   if (port < MIN_PORT_VALUE || port > MAX_PORT_VALUE) return ERROR_SOCKFD_VALUE;
 
   int sockfd = ERROR_SOCKFD_VALUE;
-  int addrResolveResult;
+  char hostAddrString[INET6_ADDRSTRLEN];
 
   struct addrinfo hints, *servinfo, *p;
-
-  char hostAddrString[INET6_ADDRSTRLEN];
 
   memset(&hints, 0, sizeof(hints));
 
   hints.ai_family = AF_UNSPEC; //IPv4.6 agnostic
   hints.ai_socktype = SOCK_DGRAM; // UDP
 
-  addrResolveResult=getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);
-  if (addrResolveResult != 0){
+  int addrResolveResult=getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);
+  if (addrResolveResult != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrResolveResult));
     return ERROR_SOCKFD_VALUE;
   }
@@ -43,14 +56,14 @@ int socketConnection(const word TARGET_HOST, const word PORT){
     sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol);
 
     if (sockfd == ERROR_SOCKFD_VALUE){
-	perror("Client socket binding");
-	continue;
+      perror("Client socket binding");
+      continue;
     }
 
     if (connect(sockfd, p->ai_addr, p->ai_addrlen) == ERROR_SOCKFD_VALUE) {
-	close(sockfd);
-	perror("Client socket connecting");
-	continue;
+      close(sockfd);
+      perror("Client socket connecting");
+      continue;
     }
 
     break;
@@ -81,22 +94,26 @@ void *msgTransit(void *data){
   }
 
   DataState currentState = fdData->state;
-  long long int byteTransaction = 0;
+
+  //long long int
+  LLInt *transactionByteCount = (LLInt *)malloc(sizeof(LLInt));
+  //**Remember to free the memory allocated in order to return the byte count
+
+  *transactionByteCount = 0;
+
+  //Setting up the socket-polling timer struct
+  struct timeval transactionTimerSt;
+  transactionTimerSt.tv_sec = POLL_TIMEOUT_SECS_CLIENT;
+  transactionTimerSt.tv_usec = POLL_TIMEOUT_USECS_CLIENT;
 
   switch(currentState){
     case SENDING:{
-      struct timeval sendingTimerStruct;
-      sendingTimerStruct.tv_sec = POLL_TIMEOUT_SECS_CLIENT;
-      sendingTimerStruct.tv_usec = POLL_TIMEOUT_USECS_CLIENT;
-      byteTransaction = sendData(fdData, sendingTimerStruct);
+      *transactionByteCount = sendData(fdData, transactionTimerSt);
       break;
     }
 
     case RECEIVING:{
-      struct timeval recvTimerStruct;
-      recvTimerStruct.tv_sec = POLL_TIMEOUT_SECS_CLIENT;
-      recvTimerStruct.tv_usec = POLL_TIMEOUT_USECS_CLIENT;
-      byteTransaction = recvData(fdData, recvTimerStruct);
+      *transactionByteCount = recvData(fdData, transactionTimerSt);
       break;
     }
 
@@ -105,8 +122,11 @@ void *msgTransit(void *data){
     }
   }
 
-  printf("byteTrans %lld\n", byteTransaction);
-  return NULL;
+#ifdef DEBUG
+  printf("byteTrans %lld\n", *transactionByteCount);
+#endif
+
+  return transactionByteCount;
 }
 
 long long int sendData(fdPair *fDP, struct timeval timerStruct){
@@ -147,7 +167,7 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
       //New data has come in the timer gets reset
       nRead = getChars(from, sendBuf, BUF_SIZ, &eofState);
       if ((nRead == 0) && (eofState == True)){
-	if (sendBuf != NULL) freeWord(sendBuf);
+	freeWord(sendBuf);
 	printf("EOFFFFFFFFFFF HERE ");
 	break;
       }
@@ -168,8 +188,6 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
       else totalSentByteCount += sentByteCount;
     }
 
-    //Finally after all required data has been sent, check to see if
-    //our last read produced End of File (EOF)
     fprintf(
       stderr, "\033[3mTotal bytes sent: %lld\033[00m\r", totalSentByteCount
     );
@@ -178,6 +196,8 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
       freeWord(sendBuf);
     }
 
+    //Finally after all required data has been sent, check to see if
+    //our last read produced End of File (EOF)
     if (eofState == True) break;
   }
 
@@ -241,4 +261,164 @@ long long int recvData(fdPair *fDP, struct timeval tv){
   }
 
   return totalBytesIn;
+}
+
+int runServer(const word port, FILE *ifp){
+  if (ifp == NULL){
+    raiseWarning("Null file pointer passed in");
+    return -2;
+  }
+
+  int convertedFD = fileno(ifp); 
+
+  int  sockfd, new_fd; //Listen on sock_fd, the new connection on new_fd
+  struct addrinfo hints, *servinfo, *p;
+  struct sockaddr_storage their_addr; // connector's address information
+  socklen_t sin_size;
+
+  struct sigaction sa;
+  Bool YES = True;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_flags = AI_PASSIVE;
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM; //Bi-directional server
+
+  int addrResolve = getaddrinfo(NULL, port, &hints, &servinfo);
+  if (addrResolve != 0) {
+    fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrResolve));
+    return 1;
+  }
+
+  //Loop through all the results, binding to the first that accepts
+  for(p = servinfo; p != NULL; p = p->ai_next) {
+    sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol);
+    if (sockfd == -1){
+        perror("server: socket");
+        continue;
+    }
+
+    //Enabling re-usability of our socket
+    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &YES, sizeof(int)) == -1){
+      perror("setsockopt");
+      return 1;
+    }
+
+    if (bind(sockfd, p->ai_addr, p->ai_addrlen) == -1) {
+      close(sockfd);
+      perror("server: binding");
+      continue;
+    }
+
+    break;
+  }
+
+  if (p == NULL) {
+    fprintf(stderr, "server: failed to bind\n");
+    return 2;
+  }
+
+  freeaddrinfo(servinfo);
+  if (listen(sockfd, BACKLOG) == -1) {
+    perror("listen");
+    return 1;
+  }
+
+  sa.sa_handler = sigchld_handler;//Reaps all dead processes
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART;
+
+  if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+    perror("sigaction");
+    return 1;
+  }
+
+  printf("\033[32mServer: serving on %s\033[00m\n", port);
+  printf("Waiting for connections...\n");
+
+  sin_size = sizeof(their_addr);
+  new_fd = accept(sockfd, (struct sockaddr *)&their_addr, &sin_size);
+
+  if (new_fd == -1) {
+    perror("accept");
+  }
+
+  char clientIP[INET6_ADDRSTRLEN];
+
+  inet_ntop(
+    their_addr.ss_family, 
+    get_in_addr((struct sockaddr *)&their_addr), 
+    clientIP, sizeof(clientIP)
+  );
+
+  printf("server: got connection from %s\n", clientIP);
+
+  //Setting up variables for the transaction
+  long long int totalRecvteCount = 0;
+
+  //Setting up resources to poll for incoming data through input-terminal
+  struct timeval timerStruct;
+  timerStruct.tv_sec = POLL_TIMEOUT_SECS_SERVER;
+  timerStruct.tv_usec = POLL_TIMEOUT_USECS_SERVER;
+
+  fd_set descriptorSet;
+  FD_ZERO(&descriptorSet);
+  FD_SET(convertedFD,&descriptorSet);
+
+  select(convertedFD+1, &descriptorSet, NULL, NULL, &timerStruct);
+
+  //Let's modify the input terminals settings to match our specs 
+
+  TermPair termPair;
+  initTermPair(new_fd, &termPair);
+  //Changing the terminal's I/O speeds
+  
+  BaudRatePair baudP;
+  initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
+
+  if (setBaudRate(&termPair, baudP) != True) {
+    raiseWarning("Failed to change baud rate");
+  }
+
+  termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
+  termPair.newTerm.c_oflag &= ~OPOST;
+
+  //Time to flush our settings to the file descriptor
+  tcsetattr(new_fd, TCSANOW, &(termPair.newTerm));
+    
+  while (1) {
+    while (FD_ISSET(new_fd, &descriptorSet)){ 
+      //New data has come in the timer gets reset
+      //nRead = getChars(convertedFD, sendBuf, BUF_SIZ);
+      ;
+    }
+
+    word recvBuf = (word)malloc(sizeof(char)*MAX_BUF_LENGTH);
+    int recvByteCount = recv(new_fd, recvBuf, MAX_BUF_LENGTH-1, 0);
+
+    if (recvByteCount == 0){ //Peer has performed an orderly shutdown
+      fflush(ifp);
+      raise(SIGTERM);//Hacky way of closing down our processes, to be refined
+    }
+
+    else if (recvByteCount == -1){  
+      perror("send");
+    }else{ 
+      totalRecvteCount += recvByteCount;
+      fwrite(recvBuf, sizeof(char), recvByteCount, ifp);
+      fflush(ifp);
+    }
+
+    freeWord(recvBuf);
+
+    fprintf(stderr, "Total bytes recvd: %lld\r", totalRecvteCount);
+  }
+
+  //Clean up here
+
+  //Reverting the input terminal's settings
+  tcsetattr(new_fd, TCSANOW, &(termPair.origTerm));
+  close(new_fd);
+
+  return 0;
 }

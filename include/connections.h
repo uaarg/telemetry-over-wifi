@@ -8,7 +8,9 @@
   #include <termios.h>
 
   #include "platformHandler.h"
+
   #include "ioLib.h"
+  #include "sigHandling.h"
 
   #include "constants.h"
   #include "dataTypes.h"
@@ -34,5 +36,11 @@
 
   //Thread-based function to manage sending and receiving of data
   //based off the states 'RECEIVING' and 'SENDING'
+  //RETURNS the total byte count: 
+  // PLEASE REMEMBER TO FREE THE MEMORY ALLOCATED TO RETURN THE BYTE COUNT
   void *msgTransit(void *);
+
+  //Given a port, an a file pointer for the data to be 
+  //received through the port, spawn a server
+  int runServer(const word, FILE *);
 #endif
