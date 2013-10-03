@@ -25,11 +25,13 @@
 
   //Given a struct containing hostName and port as attributes
   //invoke and return the result from socketConnection(...)
-  void *socketViaStruct(const void *);
+  void *socketViaStruct(void *);
 
-  long long int sendData(fdPair *, struct timeval);
+  //Returns the long long int byte count of sent data
+  LLInt sendData(fdPair *, struct timeval);
 
-  long long int recvData(fdPair *, struct timeval);
+  //Returns the long long int byte count of received data
+  LLInt recvData(fdPair *, struct timeval);
 
   //Handler for outgoing data to be pushed to the connected end of
   //a client socket

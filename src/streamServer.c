@@ -21,17 +21,20 @@ int main(int argc, char *args[]){
 
   int portNumber;
   if (sscanf(args[1],"%d",&portNumber) != 1){
-    raiseWarning("Please enter an integer between [0,65536] for the port");
+    raiseWarning("Please enter an integer between [0, 65536] for the port");
     exit(2);
   }
-  if (portNumber > (1<<16)){
-    fprintf(stderr, "%d is an invalid port number. Range is [0,65536]\n",
-	portNumber);
+  if (portNumber > MAX_PORT_VALUE){
+    fprintf(stderr, 
+	"%d is an invalid port number. Range is [0, 65536]\n", portNumber
+    );
     exit(3);
   }
 
   char *filePath = args[2];
+#ifdef DEBUG
   fprintf(stderr, "Outfile: %s\n",filePath);
+#endif
 
   struct stat statInfo;
   //Ensuring that directories aren't passed in

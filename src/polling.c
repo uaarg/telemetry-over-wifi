@@ -35,12 +35,14 @@ void pollTill(pollThStruct *pollTST){
   const double timeOutSecs = pollTST->timeOut;
   while (1){
     pollTST->savSuccess = pollTST->funcToRun(pollTST->arg);
+  #ifdef DEBUG
     printf("%d\n", *(int *)pollTST->savSuccess);
+  #endif
     Comparison vComparison = pollTST->valComp(
       pollTST->savSuccess, pollTST->errorValue
     );
     if (vComparison != EQ){
-      fprintf(stderr, "\033[33mPolling condition met\n\033[00m");
+      fprintf(stderr, "\033[33mDone Polling as condition met\n\033[00m");
       break;
     }else{
       clearCursorLine(stderr);

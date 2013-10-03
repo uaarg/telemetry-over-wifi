@@ -30,7 +30,7 @@ void *get_in_addr(struct sockaddr *sa){
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-void *socketViaStruct(const void *pHStruct){
+void *socketViaStruct(void *pHStruct){
   portHostStruct pHSt = *(portHostStruct *)pHStruct;
   int *sockResult = (int *)malloc(sizeof(int));
   *sockResult = socketConnection(pHSt.hostName, pHSt.port);
@@ -96,7 +96,6 @@ int socketConnection(const word TARGET_HOST, const word PORT){
 void *msgTransit(void *data){
   fdPair *fdData = (fdPair *)data;
 
-  printf("|N MSG TRANSIT\n");
   if (fdData == NULL){
     raiseWarning("NULL fdData passed in");
     return NULL;
@@ -138,9 +137,9 @@ void *msgTransit(void *data){
   return transactionByteCount;
 }
 
-long long int sendData(fdPair *fDP, struct timeval timerStruct){
+LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   //Setting up variables for the transaction
-  long long int totalSentByteCount = 0;
+  LLInt totalSentByteCount = 0;
 
   int to = fDP->toFD;
   int from = fDP->fromFD;
@@ -155,11 +154,16 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
 
   TermPair termPair;
   initTermPair(from, &termPair);
+
   //Changing the terminal's I/O speeds
   initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
 
-  termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
+  termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity
+  termPair.newTerm.c_cflag &= ~CSTOPB; //1 stop bit
+  termPair.newTerm.c_cflag |= (CS8 | CLOCAL); //Setting those 8 bits
+
   termPair.newTerm.c_oflag &= ~OPOST;
+  termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
 
   //Time to flush our settings to the file descriptor
   tcsetattr(from, TCSANOW, &(termPair.newTerm));
@@ -222,7 +226,7 @@ long long int sendData(fdPair *fDP, struct timeval timerStruct){
   return totalSentByteCount;
 }
 
-long long int recvData(fdPair *fDP, struct timeval tv){
+LLInt recvData(fdPair *fDP, struct timeval tv){
   fd_set monitorFDS;
 
   int toFD = fDP->toFD;
@@ -234,7 +238,7 @@ long long int recvData(fdPair *fDP, struct timeval tv){
   select(sockfd+1, &monitorFDS, NULL, NULL, &tv);
 
   int bufferedReads = 0;
-  long long int totalBytesIn=0, nRecvdBytes=0;
+  LLInt totalBytesIn=0, nRecvdBytes=0;
 
   while (1){
     if (FD_ISSET(sockfd, &monitorFDS)){
@@ -365,7 +369,7 @@ int runServer(const word port, FILE *ifp){
   printf("server: got connection from %s\n", clientIP);
 
   //Setting up variables for the transaction
-  long long int totalRecvteCount = 0;
+  LLInt totalRecvteCount = 0;
 
   //Setting up resources to poll for incoming data through input-terminal
   struct timeval timerStruct;
@@ -409,7 +413,7 @@ int runServer(const word port, FILE *ifp){
 
     if (recvByteCount == 0){ //Peer has performed an orderly shutdown
       fflush(ifp);
-      raise(SIGTERM);//Hacky way of closing down our processes, to be refined
+      raise(SIGTERM); //Hacky way of closing down our processes, to be refined
     }
 
     else if (recvByteCount == -1){  

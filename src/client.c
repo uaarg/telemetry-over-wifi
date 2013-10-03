@@ -1,6 +1,9 @@
 /*
   Author: Emmanuel Odeke <odeke@ualberta.ca>
   Client: sample usage:
+    echo "Aloha ola and bonjour" | ./client localhost 5000
+    ./client localhost 5000 src/foo.txt
+    cat src/\*.c | ./client localhost 8080 
 */
 #include <assert.h>
 #include <pthread.h>
@@ -10,16 +13,24 @@
 #include "../include/connections.h"
 #include "../include/platformHandler.h"
 
+#define USAGE_CLIENT \
+  "Usage:: \033[33m./client <hostname> <port> optional[inputFile]\n\t\033[32m\
+    Reads implicitly from standard input thus allows piping\033[00m\n"
+
 int main(int argc, char *argv[]){
-  if (argc < 4) {
-    fprintf(stderr,"usage: ./client <hostname> <port> <inputFile>\n");
+  if (argc < 3) {
+    fprintf(stderr,USAGE_CLIENT);
     exit(1);
   }
 
-  FILE *inFilePointer = fopen(argv[3], "r");
-  if (inFilePointer == NULL) {
-    fprintf(stderr, "Error reading input file\n");
-    exit(-1);
+  FILE *inFilePointer = stdin;
+  if (argc > 4) { 
+    inFilePointer = fopen(argv[3], "r");
+
+    if (inFilePointer == NULL) {
+      raiseWarning("Error opening input file");
+      exit(-1);
+    }
   }
   int infd = fileno(inFilePointer);
 
@@ -40,10 +51,12 @@ int main(int argc, char *argv[]){
 
   int *sockfd = (int *)pollTST.savSuccess;
 
-  printf("socKFD %d\n", *sockfd);
+#ifdef DEBUG
+  printf("socKetFileDescriptor value %d\n", *sockfd);
+#endif
   if (*sockfd == ERROR_SOCKFD_VALUE){
     if (sockfd != NULL) free(sockfd);
-    fprintf(stderr, "Error while opening socket\n");
+    raiseWarning("Error while opening socket");
     exit(-1);
   }
 
@@ -70,6 +83,7 @@ int main(int argc, char *argv[]){
   pthread_create(&sendThread, NULL, msgTransit, &sendFilePair);
 
   LLInt *totalTransactionCount = NULL;
+
   //Let's get back the number of bytes transferred
   pthread_join(sendThread, (void *)totalTransactionCount);
 

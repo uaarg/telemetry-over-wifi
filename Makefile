@@ -15,8 +15,6 @@ endif
 #for the above cross-platform compilation clauses
 
 all:	Makefile $(CLIENT_EXEC) $(SERVER_EXEC)
-	echo $(OS)
-	#
 
 LIBS := $(SYS_LIBS) -pthread
 CC := gcc

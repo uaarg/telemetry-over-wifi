@@ -7,49 +7,49 @@
 
   typedef long long int LLInt;
 
-  typedef enum{
+  typedef enum {
     LT=-1, EQ=0, GT=1
-  }Comparison;
+  } Comparison;
 
-  typedef enum{
+  typedef enum {
     False=0, True=1
-  }Bool;
+  } Bool;
 
-  typedef enum{
+  typedef enum {
     INT_FD, FILE_FD
-  }DescriptorState;  
+  } DescriptorState;  
 
-  typedef enum{
+  typedef enum {
     INVALID, SENDING, RECEIVING
-  }DataState;
+  } DataState;
 
   typedef char *word;
 
-  typedef struct{
+  typedef struct {
     int sockFD;
-  }BiSocket;
+  } BiSocket;
 
-  typedef struct{
+  typedef struct {
     int fromFD;
     int toFD;
     unsigned int bufSize;
     DataState state;
-  }fdPair;
+  } fdPair;
   
-  typedef struct{
+  typedef struct {
     speed_t inBaudRate;
     speed_t outBaudRate;
-  }BaudRatePair;
+  } BaudRatePair;
 
-  typedef struct{
+  typedef struct {
     struct termios origTerm;
     struct termios newTerm;
     BaudRatePair baudRatePair;
     int fd;
-  }TermPair;
+  } TermPair;
 
   //Structure to enable polling and retrying of functions
-  typedef struct{
+  typedef struct {
     void *(*funcToRun)(void *data);
     void *arg;
     void *errorValue;
@@ -57,10 +57,10 @@
     double timeOut;
     uint32 tryCount;
     Comparison (*valComp)(void *, void *);
-  }pollThStruct;
+  } pollThStruct;
 
-  typedef struct{
+  typedef struct {
     word port;
     word hostName;
-  }portHostStruct;
+  } portHostStruct;
 #endif
