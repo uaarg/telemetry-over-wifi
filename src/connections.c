@@ -158,7 +158,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   //Changing the terminal's I/O speeds
   initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
 
-  termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity
+  termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity checking
   termPair.newTerm.c_cflag &= ~CSTOPB; //1 stop bit
   termPair.newTerm.c_cflag |= (CS8 | CLOCAL); //Setting those 8 bits
 
