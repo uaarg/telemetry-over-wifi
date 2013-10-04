@@ -24,7 +24,7 @@ int main(int argc, char *argv[]){
   }
 
   FILE *inFilePointer = stdin;
-  if (argc > 4) { 
+  if (argc > 3) { 
     inFilePointer = fopen(argv[3], "r");
 
     if (inFilePointer == NULL) {
