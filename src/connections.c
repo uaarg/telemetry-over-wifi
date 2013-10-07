@@ -168,7 +168,9 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   tcsetattr(from, TCSANOW, &(termPair.newTerm));
 
   //Time to flush our settings to the file descriptor
-  tcflush(from, TCOFLUSH);
+  //With queue_selector set to TCIOFLUSH, data received but not read
+  //or data written but not transmitted are flushed
+  tcflush(from, TCIOFLUSH);
 
   unsigned int BUF_SIZ = fDP->bufSize;
  
@@ -224,7 +226,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
 
   //Reverting the input terminal's settings
   tcsetattr(from, TCSANOW, &(termPair.origTerm));
-  tcflush(from, TCOFLUSH);
+  tcflush(from, TCIOFLUSH);
 
   return totalSentByteCount;
 }
@@ -438,7 +440,7 @@ int runServer(const word port, FILE *ifp){
 
   //Reverting the input terminal's settings
   tcsetattr(new_fd, TCSANOW, &(termPair.origTerm));
-  tcflush(new_fd, TCOFLUSH);
+  tcflush(new_fd, TCIFLUSH);
 
   close(new_fd);
 
