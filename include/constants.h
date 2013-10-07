@@ -6,9 +6,9 @@
 	the number of files that can be opened at once";
 	
   static const int BACKLOG = 20;//How many pending connections queue will hold
-  static const int BUF_SIZ = 1024;//Arbitrary size here
+  static const int BUF_SIZ = 32;//Arbitrary size here
 
-  static const int MAX_BUF_LENGTH = 1024;//Max number of bytes we can get at once
+  static const int MAX_BUF_LENGTH = 32;//Max number of bytes we can get at once
   static const int MIN_PORT_VALUE = 0;
   static const int MAX_PORT_VALUE = 1<<16;
 
