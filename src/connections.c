@@ -153,26 +153,26 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
 
   //Let's modify the input terminals settings to match our specs 
 
-  TermPair termPair;
-  initTermPair(from, &termPair);
+  // TermPair termPair;
+  // initTermPair(from, &termPair);
 
-  //Changing the terminal's I/O speeds
-  initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
+  // //Changing the terminal's I/O speeds
+  // initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
 
 
-  termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity checking
-  termPair.newTerm.c_cflag &= ~CSTOPB; //1 stop bit
-  termPair.newTerm.c_cflag |= (CS8 | CLOCAL); //Setting those 8 bits
+  // termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity checking
+  // termPair.newTerm.c_cflag &= ~CSTOPB; //1 stop bit
+  // termPair.newTerm.c_cflag |= (CS8 | CLOCAL); //Setting those 8 bits
 
-  termPair.newTerm.c_oflag &= ~OPOST;
-  termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
+  // termPair.newTerm.c_oflag &= ~OPOST;
+  // termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
 
-  tcsetattr(from, TCSANOW, &(termPair.newTerm));
+  // tcsetattr(from, TCSANOW, &(termPair.newTerm));
 
-  //Time to flush our settings to the file descriptor
-  //With queue_selector set to TCIOFLUSH, data received but not read
-  //or data written but not transmitted are flushed
-  tcflush(from, TCIOFLUSH);
+  // //Time to flush our settings to the file descriptor
+  // //With queue_selector set to TCIOFLUSH, data received but not read
+  // //or data written but not transmitted are flushed
+  // tcflush(from, TCIOFLUSH);
 
   unsigned int BUF_SIZ = fDP->bufSize;
  
@@ -228,8 +228,8 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   //Clean up here
 
   //Reverting the input terminal's settings
-  tcsetattr(from, TCSANOW, &(termPair.origTerm));
-  tcflush(from, TCIOFLUSH);
+  // tcsetattr(from, TCSANOW, &(termPair.origTerm));
+  // tcflush(from, TCIOFLUSH);
 
   return totalSentByteCount;
 }
