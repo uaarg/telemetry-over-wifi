@@ -4,6 +4,7 @@ ifeq ($(OS), Windows_NT)
 	SERVER_EXEC = server.exe
 	SYS_LIBS = -lws2_32
 	RM = del
+	echo "ERROR WINDOWS NOT SUPPORTED"
 else
 	PLATFORM = UNIX
 	CLIENT_EXEC = client
@@ -21,19 +22,21 @@ CC := gcc
 CC_FLAGS := -Wall
 
 $(CLIENT_EXEC):	      Makefile src/client.c ioLib connection polling
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
 
 $(SERVER_EXEC):	      Makefile src/streamServer.c ioLib connection polling
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
 
-connection:	    include/connections.h src/connections.c sigHandling ioLib
+connection:	    include/connections.h src/connections.c sigHandling ioLib cserial
 	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c src/connections.c -o exec/connections.o
 
 ioLib:	      include/ioLib.h src/ioLib.c include/dataTypes.h
 	$(CC) $(CC_FLAGS) -c src/ioLib.c -o exec/ioLib.o
 
+cserial:	      include/cserial.h src/cserial.c include/dataTypes.h
+	$(CC) $(CC_FLAGS) -c src/cserial.c -o exec/cserial.o
 
-sigHandling:  include/sigHandling.h src/sigHandling.c include/dataTypes.h ioLib
+sigHandling:  include/sigHandling.h src/sigHandling.c include/dataTypes.h ioLib cserial
 	$(CC) $(CC_FLAGS) -c src/sigHandling.c -o exec/sigHandling.o
 
 

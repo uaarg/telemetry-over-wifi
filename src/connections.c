@@ -10,6 +10,7 @@
 #endif
 
 #include "../include/ioLib.h"
+#include "../include/cserial.h"
 #include "../include/polling.h"
 #include "../include/sigHandling.h"
 #include "../include/dataTypes.h"
@@ -158,6 +159,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   //Changing the terminal's I/O speeds
   initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
 
+
   termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity checking
   termPair.newTerm.c_cflag &= ~CSTOPB; //1 stop bit
   termPair.newTerm.c_cflag |= (CS8 | CLOCAL); //Setting those 8 bits
@@ -183,10 +185,11 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
     if (FD_ISSET(from, &descriptorSet)){ 
       //New data has come in the timer gets reset
       nRead = getChars(from, sendBuf, BUF_SIZ, &eofState);
+      //printf("%s",sendBuf);
       if ((nRead == 0) && (eofState == True)){
-	freeWord(sendBuf);
-	printf("EOFFFFFFFFFFF HERE ");
-	break;
+      	freeWord(sendBuf);
+      	printf("EOFFFFFFFFFFF HERE ");
+      	break;
       }
     }
 
@@ -389,23 +392,23 @@ int runServer(const word port, FILE *ifp){
 
   //Let's modify the input terminals settings to match our specs 
 
-  TermPair termPair;
-  initTermPair(new_fd, &termPair);
-  //Changing the terminal's I/O speeds
+  // TermPair termPair;
+  // initTermPair(new_fd, &termPair);
+  // //Changing the terminal's I/O speeds
   
-  BaudRatePair baudP;
-  initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
+  // BaudRatePair baudP;
+  // initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
 
-  if (setBaudRate(&termPair, baudP) != True) {
-    raiseWarning("Failed to change baud rate");
-  }
+  // if (setBaudRate(&termPair, baudP) != True) {
+  //   raiseWarning("Failed to change baud rate");
+  // }
 
-  termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
-  termPair.newTerm.c_oflag &= ~OPOST;
+  // termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
+  // termPair.newTerm.c_oflag &= ~OPOST;
 
-  //Time to flush our settings to the file descriptor
-  tcsetattr(new_fd, TCSANOW, &(termPair.newTerm));
-  tcflush(new_fd, TCOFLUSH);
+  // //Time to flush our settings to the file descriptor
+  // tcsetattr(new_fd, TCSANOW, &(termPair.newTerm));
+  // tcflush(new_fd, TCOFLUSH);
     
   while (1) {
     while (FD_ISSET(new_fd, &descriptorSet)){ 
@@ -439,8 +442,8 @@ int runServer(const word port, FILE *ifp){
   //Clean up here
 
   //Reverting the input terminal's settings
-  tcsetattr(new_fd, TCSANOW, &(termPair.origTerm));
-  tcflush(new_fd, TCIFLUSH);
+  // tcsetattr(new_fd, TCSANOW, &(termPair.origTerm));
+  // tcflush(new_fd, TCIFLUSH);
 
   close(new_fd);
 

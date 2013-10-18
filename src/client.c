@@ -9,30 +9,58 @@
 #include <pthread.h>
 
 #include "../include/ioLib.h"
+#include "../include/cserial.h"
 #include "../include/polling.h"
 #include "../include/connections.h"
 #include "../include/platformHandler.h"
 
 #define USAGE_CLIENT \
-  "Usage:: \033[33m./client <hostname> <port> optional[inputFile]\n\t\033[32m\
+  "Usage:: \033[33m./client <hostname> <port> <serialdevice> <baudrate>\n\t\033[32m\
     Reads implicitly from standard input thus allows piping\033[00m\n"
 
 int main(int argc, char *argv[]){
+
+  printf("number of args: %d\n", argc);
   if (argc < 3) {
     fprintf(stderr,USAGE_CLIENT);
     exit(1);
   }
 
-  FILE *inFilePointer = stdin;
-  if (argc > 3) { 
-    inFilePointer = fopen(argv[3], "r");
+  // FILE *inFilePointer = stdin;
+  // if (argc > 3) { 
+  //   inFilePointer = fopen(argv[3], "r");
 
-    if (inFilePointer == NULL) {
-      raiseWarning("Error opening input file");
+  //   if (inFilePointer == NULL) {
+  //     raiseWarning("Error opening input file");
+  //     exit(-1);
+  //   }
+  // }
+  // int infd = fileno(inFilePointer);
+
+  //FILE *inFilePointer = stdin;
+  int infd = 0;
+  if (argc > 3) { 
+    //inFilePointer = fopen(argv[3], "r");
+    int desiredbaud = strtol(argv[4], NULL, 10);
+    printf("Using baud: %i\n",desiredbaud);
+    infd = c_init_serial(argv[3],desiredbaud, 0);
+
+    //inFilePointer = fdopen(infd, "r");
+
+    // if (inFilePointer == NULL) {
+    //   raiseWarning("Error opening input device");
+    //   exit(-1);
+    // }
+    if (infd == -1) {
+      raiseWarning("Error opening input device");
       exit(-1);
     }
-  }
-  int infd = fileno(inFilePointer);
+  } // else {
+  //   raiseWarning("Not enough input arguments");
+  //   printf(USAGE_CLIENT);
+  //   exit(-1);
+  // }
+  //int infd = fileno(inFilePointer);
 
   word hostname = argv[1];
   word port = argv[2];
@@ -89,8 +117,9 @@ int main(int argc, char *argv[]){
 
   if (totalTransactionCount != NULL) free(totalTransactionCount);
 
-  fflush(inFilePointer);
-  fclose(inFilePointer);
+  // fflush(inFilePointer);
+  // fclose(inFilePointer);
+  if (infd != -1) close(infd);
   close(*sockfd);
 
   //if (sockfd != NULL) free(sockfd);
