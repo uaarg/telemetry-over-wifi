@@ -149,59 +149,54 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   FD_ZERO(&descriptorSet);
   FD_SET(from, &descriptorSet);
 
-  select(from+1, &descriptorSet, NULL, NULL, &timerStruct);
-
-  //Let's modify the input terminals settings to match our specs 
-
-  // TermPair termPair;
-  // initTermPair(from, &termPair);
-
-  // //Changing the terminal's I/O speeds
-  // initTBaudRatePair(&termPair, TARGET_BAUD_RATE, TARGET_BAUD_RATE); 
-
-
-  // termPair.newTerm.c_cflag &= ~PARENB; //Turning off parity checking
-  // termPair.newTerm.c_cflag &= ~CSTOPB; //1 stop bit
-  // termPair.newTerm.c_cflag |= (CS8 | CLOCAL); //Setting those 8 bits
-
-  // termPair.newTerm.c_oflag &= ~OPOST;
-  // termPair.newTerm.c_lflag &= ~(ICANON | ECHO | ECHOE);
-
-  // tcsetattr(from, TCSANOW, &(termPair.newTerm));
-
-  // //Time to flush our settings to the file descriptor
-  // //With queue_selector set to TCIOFLUSH, data received but not read
-  // //or data written but not transmitted are flushed
-  // tcflush(from, TCIOFLUSH);
 
   unsigned int BUF_SIZ = fDP->bufSize;
  
+  select(from+1, &descriptorSet, NULL, NULL, &timerStruct);
   int eofState = False; //Once set, EOF was encountered
-  while (1){
+
+  while (1) {
     word sendBuf = (word)malloc(sizeof(char)*BUF_SIZ);
     assert(sendBuf != NULL);
 
     int nRead = 0;
-    if (FD_ISSET(from, &descriptorSet)){ 
-      //New data has come in the timer gets reset
-      nRead = getChars(from, sendBuf, BUF_SIZ, &eofState);
-      //printf("%s",sendBuf);
-      if ((nRead == 0) && (eofState == True)){
-      	freeWord(sendBuf);
-      	printf("EOFFFFFFFFFFF HERE ");
-      	break;
+    char c;
+
+    while (nRead < BUF_SIZ) {
+      if (FD_ISSET(from, &descriptorSet)) { 
+	int readResult = read(from, &c, 1);
+	if (readResult == 0) { //EOF encountered
+	  eofState = True;
+	  break;
+	} else if (readResult == -1) break; //A read error occured
+
+	sendBuf[nRead] = c;
+	++nRead;
+      } else {
+	continue;
       }
     }
 
+    sendBuf[nRead] = '\0';
+
+    //printf("%s",sendBuf);
+    if ((nRead == 0) && (eofState == True)) {
+      freeWord(sendBuf);
     #ifdef DEBUG
-      printf("%s", sendBuf);
+      printf("EOFFFFFFFFFFF HERE ");
     #endif
+      break;
+    }
+
+  #ifdef DEBUG
+    printf("%s", sendBuf);
+  #endif
 
     if (! nRead){
     #ifdef DEBUG
       raiseWarning("Failed to read in a character from");
     #endif
-    }else {
+    } else {
       int sentByteCount = send(to, sendBuf, nRead, 0);
 
       if (sentByteCount == -1)  perror("send");
@@ -225,11 +220,6 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   clearCursorLine(stdout);
 
   printf("Done reading\n");  
-  //Clean up here
-
-  //Reverting the input terminal's settings
-  // tcsetattr(from, TCSANOW, &(termPair.origTerm));
-  // tcflush(from, TCIOFLUSH);
 
   return totalSentByteCount;
 }
@@ -438,12 +428,6 @@ int runServer(const word port, FILE *ifp){
     
     fprintf(stderr, "Total bytes recvd: %lld\r", totalRecvteCount);
   }
-
-  //Clean up here
-
-  //Reverting the input terminal's settings
-  // tcsetattr(new_fd, TCSANOW, &(termPair.origTerm));
-  // tcflush(new_fd, TCIFLUSH);
 
   close(new_fd);
 

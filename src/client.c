@@ -26,10 +26,9 @@ int main(int argc, char *argv[]){
   }
 
   int infd = 0; //By default read from standard input unless otherwise specified
+  int targetBaudRate_int = 57600; //Default target baud rate
 
   if (argc > 3) {
-
-    int targetBaudRate_int = 57600;
 
     if (argc > 4) {
       targetBaudRate_int = atoi(argv[4]);
@@ -46,6 +45,8 @@ int main(int argc, char *argv[]){
       raiseWarning("Error opening input device");
       exit(-1);
     }
+  } else {
+    infd = c_init_serialFD(infd, targetBaudRate_int, False);
   }
 
   word hostname = argv[1];
@@ -108,14 +109,12 @@ int main(int argc, char *argv[]){
 
   if (totalTransactionCount != NULL) free(totalTransactionCount);
 
-  // fflush(inFilePointer);
-  // fclose(inFilePointer);
   if (infd != ERROR_SOCKFD_VALUE) 
     close(infd);
 
   close(*sockfd);
 
-  //if (sockfd != NULL) free(sockfd);
+  if (sockfd != NULL) free(sockfd);
 
   return 0;
 }

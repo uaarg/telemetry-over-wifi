@@ -13,7 +13,7 @@
 
 int main(int argc, char *args[]){
   if (argc != 3){
-    printf("%s\n",USAGE_INFO);
+    printf("\033[32m%s\033[00m\n",USAGE_INFO);
     exit(1);
   }
 

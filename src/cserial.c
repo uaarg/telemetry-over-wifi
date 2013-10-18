@@ -38,97 +38,108 @@
  *   Open serial device for requested protocol	  *
  **************************************************
 */
-int c_init_serial(
-  const char* devicePath, const int speed, const Bool hw_flow_control
-) {
 
-  struct termios orig_termios, cur_termios;
-
-  speed_t br;
+speed_t matchBaudRate(const int speed) {
+  speed_t theBaudRate;
 
   switch (speed) {
     case 0:
-      br = B0;
+      theBaudRate = B0;
       break;
 
     case 50:
-      br = B50;
+      theBaudRate = B50;
       break;
 
     case 75:
-      br = B75;
+      theBaudRate = B75;
       break;
 
     case 110:
-      br = B110;
+      theBaudRate = B110;
       break;
 
     case 134:
-      br = B134;
+      theBaudRate = B134;
       break;
 
     case 150:
-      br = B150;
+      theBaudRate = B150;
       break;
 
     case 200:
-      br = B200;
+      theBaudRate = B200;
       break;
 
     case 300:
-      br = B300;
+      theBaudRate = B300;
       break;
 
     case 600:
-      br = B600;
+      theBaudRate = B600;
       break;
 
     case 1200:
-      br = B1200;
+      theBaudRate = B1200;
       break;
 
     case 1800:
-      br = B1800;
+      theBaudRate = B1800;
       break;
 
     case 2400:
-      br = B2400;
+      theBaudRate = B2400;
       break;
 
     case 4800:
-      br = B4800;
+      theBaudRate = B4800;
       break;
 
     case 9600:
-      br = B9600;
+      theBaudRate = B9600;
       break;
 
     case 19200:
-      br = B19200;
+      theBaudRate = B19200;
       break;
 
     case 38400:
-      br = B38400;
+      theBaudRate = B38400;
       break;
 
     case 57600:
-      br = B57600;
+      theBaudRate = B57600;
       break;
 
     case 115200:
-      br = B115200;
+      theBaudRate = B115200;
       break;
 
     case 230400:
-      br = B230400;
+      theBaudRate = B230400;
       break;
 
     default:
       printf("bad baudrate %d\n", speed);
-      return -1;
+      theBaudRate = -1;
   }
 
+  return theBaudRate;
+}
+
+int c_init_serial(
+  const char *devicePath, const int speed, const Bool hw_flow_control
+) {
   int fd = open(devicePath, O_RDWR|O_NONBLOCK);
+
+  return c_init_serialFD(fd, speed, hw_flow_control);
+}
+
+int c_init_serialFD(int fd, const int speed, const Bool hw_flow_control) {
+
+  speed_t selectedBaudRate = matchBaudRate(speed);
+
+  struct termios orig_termios, cur_termios;
 
   if (fd == -1) {
     perror("opening modem serial device : fd < 0");
@@ -167,7 +178,7 @@ int c_init_serial(
   cur_termios.c_lflag &= ~(ISIG|ICANON|IEXTEN|ECHO|FLUSHO|PENDIN);
   cur_termios.c_lflag |= NOFLSH;
 
-  if (cfsetspeed(&cur_termios, br)) {
+  if (cfsetspeed(&cur_termios, selectedBaudRate)) {
   #ifdef DEBUG
     printf("setting modem serial device speed\n");
   #endif
@@ -199,74 +210,12 @@ int c_set_dtr(int fd, Bool val_bit) {
 int c_serial_set_baudrate(int fd, const int speed) {
   struct termios tio;
 
-  speed_t br;
-
-  switch (speed) {
-    case 0:
-      br = B0;
-      break;
-    case 50:
-      br = B50;
-      break;
-    case 75:
-      br = B75;
-      break;
-    case 110:
-      br = B110;
-      break;
-    case 134:
-      br = B134;
-      break;
-    case 150:
-      br = B150;
-      break;
-    case 200:
-      br = B200;
-      break;
-    case 300:
-      br = B300;
-      break;
-    case 600:
-      br = B600;
-      break;
-    case 1200:
-      br = B1200;
-      break;
-    case 1800:
-      br = B1800;
-      break;
-    case 2400:
-      br = B2400;
-      break;
-    case 4800:
-      br = B4800;
-      break;
-    case 9600:
-      br = B9600;
-      break;
-    case 19200:
-      br = B19200;
-      break;
-    case 38400:
-      br = B38400;
-      break;
-    case 57600:
-      br = B57600;
-      break;
-    case 115200:
-      br = B115200;
-      break;
-    case 230400:
-      br = B230400;
-      break;
-    default:
-      printf("bad baudrate\n");
-      break;
-  }
+  speed_t br = matchBaudRate(speed);
 
   if (tcgetattr(fd, &tio) < 0) {
     printf("tcgetattr\n");
   }
+
   tio.c_iflag = 0;
   tio.c_oflag = 0;
   tio.c_cflag = CS8 | CREAD | CLOCAL;

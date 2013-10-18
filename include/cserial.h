@@ -27,6 +27,12 @@
 #define _CSERIAL_H
   #include "dataTypes.h"
 
+  int c_init_serialFD(
+    int fd, const int speed, const Bool hw_flow_control
+  );
+
+  //Offers more flexibility, allowing file paths to be passed in
+  //Under the hood invokes function c_init_serialFD
   int c_init_serial(
     const char* devicePath, const int speed, const Bool hw_flow_control
   );
@@ -35,4 +41,7 @@
 
   /* From the gPhoto I/O library */
   int c_serial_set_baudrate(int fd, const int speed);
+
+  //Given an integer value, does a case match and return the speed_t equivalent
+  speed_t matchBaudRate(const int speed);
 #endif
