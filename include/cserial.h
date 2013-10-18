@@ -25,14 +25,14 @@
 
 #ifndef _CSERIAL_H
 #define _CSERIAL_H
+  #include "dataTypes.h"
 
-#include "dataTypes.h"
+  int c_init_serial(
+    const char* devicePath, const int speed, const Bool hw_flow_control
+  );
 
-int c_init_serial(char* device, int speed, Bool hw_flow_control);
+  int c_set_dtr(int fd, const Bool val_bit);
 
-int c_set_dtr(int fd, Bool val_bit);
-
-/* From the gPhoto I/O library */
-int c_serial_set_baudrate(int fd, int speed);
-
+  /* From the gPhoto I/O library */
+  int c_serial_set_baudrate(int fd, const int speed);
 #endif

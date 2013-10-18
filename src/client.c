@@ -20,60 +20,48 @@
 
 int main(int argc, char *argv[]){
 
-  printf("number of args: %d\n", argc);
   if (argc < 3) {
-    fprintf(stderr,USAGE_CLIENT);
+    fprintf(stderr, USAGE_CLIENT);
     exit(1);
   }
 
-  // FILE *inFilePointer = stdin;
-  // if (argc > 3) { 
-  //   inFilePointer = fopen(argv[3], "r");
+  int infd = 0; //By default read from standard input unless otherwise specified
 
-  //   if (inFilePointer == NULL) {
-  //     raiseWarning("Error opening input file");
-  //     exit(-1);
-  //   }
-  // }
-  // int infd = fileno(inFilePointer);
+  if (argc > 3) {
 
-  //FILE *inFilePointer = stdin;
-  int infd = 0;
-  if (argc > 3) { 
-    //inFilePointer = fopen(argv[3], "r");
-    int desiredbaud = strtol(argv[4], NULL, 10);
-    printf("Using baud: %i\n",desiredbaud);
-    infd = c_init_serial(argv[3],desiredbaud, 0);
+    int targetBaudRate_int = 57600;
 
-    //inFilePointer = fdopen(infd, "r");
+    if (argc > 4) {
+      targetBaudRate_int = atoi(argv[4]);
+    }
 
-    // if (inFilePointer == NULL) {
-    //   raiseWarning("Error opening input device");
-    //   exit(-1);
-    // }
-    if (infd == -1) {
+    const word srcPath = argv[3];
+  #ifdef DEBUG
+    printf("Source file: %s\n", srcPath);
+  #endif
+
+    infd = c_init_serial(srcPath, targetBaudRate_int, False);
+
+    if (infd == ERROR_SOCKFD_VALUE) {
       raiseWarning("Error opening input device");
       exit(-1);
     }
-  } // else {
-  //   raiseWarning("Not enough input arguments");
-  //   printf(USAGE_CLIENT);
-  //   exit(-1);
-  // }
-  //int infd = fileno(inFilePointer);
+  }
 
   word hostname = argv[1];
   word port = argv[2];
 
   pollThStruct pollTST;
-  initPollThStruct(&pollTST, 1, (void *)&ERROR_SOCKFD_VALUE, intPtrComp);
+  initPollThStruct(
+    &pollTST, POLL_TIMEOUT_SINGLE_SEC, (void *)&ERROR_SOCKFD_VALUE, intPtrComp
+  );
+  pollTST.funcToRun = socketViaStruct;
  
   portHostStruct pHStruct; 
   pHStruct.hostName = hostname;
   pHStruct.port = port;
 
   pollTST.arg = &pHStruct;
-  pollTST.funcToRun = socketViaStruct;
 
   pollTill(&pollTST);
 
@@ -87,7 +75,6 @@ int main(int argc, char *argv[]){
     raiseWarning("Error while opening socket");
     exit(-1);
   }
-
 
   /*
   //Uncomment to enable receiving mode
@@ -115,11 +102,17 @@ int main(int argc, char *argv[]){
   //Let's get back the number of bytes transferred
   pthread_join(sendThread, (void *)totalTransactionCount);
 
+#ifdef DEBUG_STATISTICS
+  printf("Total bytes sent: %lld\n", totalTransactionCount);
+#endif
+
   if (totalTransactionCount != NULL) free(totalTransactionCount);
 
   // fflush(inFilePointer);
   // fclose(inFilePointer);
-  if (infd != -1) close(infd);
+  if (infd != ERROR_SOCKFD_VALUE) 
+    close(infd);
+
   close(*sockfd);
 
   //if (sockfd != NULL) free(sockfd);

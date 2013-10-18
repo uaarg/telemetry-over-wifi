@@ -31,6 +31,7 @@ int getChars(int fd, word destStr, const int len, int *eofState){
 
   char c;
   int nAdded = 0;
+
   for (; nAdded < len; ++nAdded){
     int readResult =read(fd, &c, 1);
     if (readResult == 0){//EOF encountered

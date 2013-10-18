@@ -15,6 +15,7 @@
   static const int POLL_TIMEOUT_SECS_SERVER = 0;
   static const int POLL_TIMEOUT_USECS_SERVER = 1000;
 
+  static const int POLL_TIMEOUT_SINGLE_SEC = 1;
   static const int POLL_TIMEOUT_SECS_CLIENT = 2;
   static const int POLL_TIMEOUT_USECS_CLIENT = 500000;
 

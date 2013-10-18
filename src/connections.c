@@ -212,7 +212,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
       stderr, "\033[3mTotal bytes sent: %lld\033[00m\r", totalSentByteCount
     );
 
-    if (sendBuf != NULL){
+    if (sendBuf != NULL) {
       freeWord(sendBuf);
     }
 
