@@ -22,10 +22,10 @@ LIBS := $(SYS_LIBS) -pthread
 CC := gcc
 CC_FLAGS := -Wall
 
-$(CLIENT_EXEC):	Makefile src/client.c ioLib connection polling
+$(CLIENT_EXEC):	Makefile src/client.c ioLib connection polling slist
 	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
 
-$(SERVER_EXEC):	Makefile src/streamServer.c ioLib connection polling
+$(SERVER_EXEC):	Makefile src/streamServer.c ioLib connection polling slist
 	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
 
 connection:	include/connections.h src/connections.c sigHandling ioLib cserial
@@ -43,6 +43,9 @@ sigHandling:	include/sigHandling.h src/sigHandling.c include/dataTypes.h ioLib c
 
 polling:	include/polling.h include/constants.h src/polling.c
 	$(CC) $(CC_FLAGS) -c src/polling.c -o exec/polling.o
+
+slist:		include/SList.h src/SList.c
+	$(CC) $(CC_FLAGS) -c src/SList.c -o exec/SList.o
 
 clean:
 	cd exec/
