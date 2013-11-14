@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#include "../include/errors.h"
 #include "../include/connections.h"
 
 #define USAGE_INFO "./server <port> <dataStoragePath>"
@@ -21,8 +22,8 @@ int main(int argc, char *args[]){
 
   int portNumber;
   if (sscanf(args[1],"%d",&portNumber) != 1){
-    raiseWarning("Please enter an integer between [0, 65536] for the port");
-    exit(2);
+    // Fatal-error here
+    raiseError("Please enter an integer between [0, 65536] for the port", True);
   }
   if (portNumber > MAX_PORT_VALUE){
     fprintf(stderr, 

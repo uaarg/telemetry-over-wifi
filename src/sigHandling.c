@@ -8,7 +8,6 @@
 #include <signal.h> 
 #include <errno.h>
 
-
 void terminate(){
   //Will define closing of open resources eg sockets, file descriptors etc
   fprintf(stderr, "Exiting...\n");

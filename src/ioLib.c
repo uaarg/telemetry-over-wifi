@@ -6,6 +6,7 @@
 #include <unistd.h>
 
 #include "../include/ioLib.h"
+#include "../include/errors.h"
 #include "../include/constants.h"
 
 void clearCursorLine(FILE *screen){
@@ -19,13 +20,13 @@ void clearCursorLine(FILE *screen){
 
 int getChars(int fd, word destStr, const int len, int *eofState){
   if (destStr == NULL){
-    raiseWarning("NULL string storage passed in.");
+    raiseError("NULL string storage passed in.", False); // Non-fatal err
     return -1;
   }
 
   
   if (fd == ERROR_SOCKFD_VALUE){
-    raiseWarning("NULL file descriptor cannot be read from.");
+    raiseError("NULL file descriptor cannot be read from.", False);
     return -1;
   }
 
