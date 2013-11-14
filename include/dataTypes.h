@@ -1,3 +1,4 @@
+// Author: Emmanuel Odeke <odeke@ualberta.ca>
 #ifndef _DATA_TYPES_H
 #define _DATA_TYPES_H
   #include <stdio.h>
@@ -50,12 +51,12 @@
 
   //Structure to enable polling and retrying of functions
   typedef struct {
-    void *(*funcToRun)(void *data);
     void *arg;
     void *errorValue;
     void *savSuccess; //Storage for success value
     double timeOut;
     uint32 tryCount;
+    void *(*funcToRun)(void *data);
     Comparison (*valComp)(void *, void *);
   } pollThStruct;
 

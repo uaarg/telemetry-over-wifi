@@ -1,3 +1,4 @@
+// Author: Emmanuel Odeke <odeke@ualberta.ca>
 #ifndef _ERRORS_H
 #define _ERRORS_H
   #include <stdio.h>

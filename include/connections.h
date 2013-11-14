@@ -1,3 +1,5 @@
+// Author: Emmanuel Odeke <odeke@ualberta.ca>
+
 #ifndef _CONNECTIONS_H
 #define _CONNECTIONS_H
   #include <stdio.h>

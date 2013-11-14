@@ -1,3 +1,7 @@
+// Author: Emmanuel Odeke <odeke@ualberta.ca>
+// Utility to enable connections and data passage depending on state:
+//   ie Receiving vs Sending
+
 #include <assert.h>
 #include <signal.h> 
 #include <stdio.h>
@@ -26,6 +30,7 @@ void initBiSocket(BiSocket *sock){
 }  
 
 void *get_in_addr(struct sockaddr *sa){
+  // Brian Beej showed me how to do this one
   if (sa->sa_family == AF_INET) {
     return &(((struct sockaddr_in*)sa)->sin_addr);
   }
@@ -56,7 +61,7 @@ int socketConnection(const word TARGET_HOST, const word PORT){
   hints.ai_family = AF_UNSPEC; //IPv4.6 agnostic
   hints.ai_socktype = SOCK_DGRAM; // UDP
 
-  int addrResolveResult=getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);
+  int addrResolveResult = getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);
   if (addrResolveResult != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrResolveResult));
     return ERROR_SOCKFD_VALUE;
@@ -116,14 +121,16 @@ void *msgTransit(void *data){
   transactionTimerSt.tv_sec = POLL_TIMEOUT_SECS_CLIENT;
   transactionTimerSt.tv_usec = POLL_TIMEOUT_USECS_CLIENT;
 
+  LLInt (*stateFunc)(fdPair *, struct timeval) = NULL;
+
   switch(currentState){
     case SENDING:{
-      *transactionByteCount = sendData(fdData, transactionTimerSt);
+      stateFunc = sendData;
       break;
     }
 
     case RECEIVING:{
-      *transactionByteCount = recvData(fdData, transactionTimerSt);
+      stateFunc = recvData;
       break;
     }
 
@@ -131,6 +138,10 @@ void *msgTransit(void *data){
       break;
     }
   }
+
+  if (stateFunc != NULL) 
+    *transactionByteCount = stateFunc(fdData, transactionTimerSt);
+
 
 #ifdef DEBUG
   printf("byteTrans %lld\n", *transactionByteCount);

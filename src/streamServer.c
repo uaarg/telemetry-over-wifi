@@ -1,11 +1,6 @@
-/*
-  Author: Emmanuel Odeke <odeke@ualberta.ca>
-  streamServer.c
-*/
-#include <sys/stat.h>
-
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <sys/stat.h>
 
 #include "../include/errors.h"
 #include "../include/connections.h"
@@ -21,15 +16,9 @@ int main(int argc, char *args[]){
   setSigHandler(); //fire up the signal handler
 
   int portNumber;
-  if (sscanf(args[1],"%d",&portNumber) != 1){
+  if ((sscanf(args[1],"%d",&portNumber) != 1) || (portNumber > MAX_PORT_VALUE)){
     // Fatal-error here
     raiseError("Please enter an integer between [0, 65536] for the port", True);
-  }
-  if (portNumber > MAX_PORT_VALUE){
-    fprintf(stderr, 
-	"%d is an invalid port number. Range is [0, 65536]\n", portNumber
-    );
-    exit(3);
   }
 
   char *filePath = args[2];

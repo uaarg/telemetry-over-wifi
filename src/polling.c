@@ -1,3 +1,6 @@
+// Author: Emmanuel Odeke <odeke@ualberta.ca>
+// Utility to handle polling
+
 #include <stdio.h>
 #include <unistd.h>
 
