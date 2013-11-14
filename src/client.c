@@ -1,10 +1,3 @@
-/*
-  Author: Emmanuel Odeke <odeke@ualberta.ca>
-  Client: sample usage:
-    echo "Aloha ola and bonjour" | ./client localhost 5000
-    ./client localhost 5000 src/foo.txt
-    cat src/\*.c | ./client localhost 8080 
-*/
 #include <assert.h>
 #include <pthread.h>
 
@@ -29,6 +22,14 @@ int main(int argc, char *argv[]){
   int infd = 0; //By default read from standard input unless otherwise specified
   int targetBaudRate_int = 57600; //Default target baud rate
 
+  // Checking if the port is valid
+  unsigned int portValue;
+  word port = argv[2];
+
+  if ((sscanf(port, "%d", &portValue) != 1) || (portValue > MAX_PORT_VALUE)) {
+    raiseError("Port number should range from [0 to 65536]", True);
+  }
+
   if (argc > 3) {
 
     if (argc > 4) {
@@ -49,8 +50,6 @@ int main(int argc, char *argv[]){
     infd = c_init_serialFD(infd, targetBaudRate_int, False);
   }
 
-  word hostname = argv[1];
-  word port = argv[2];
 
   pollThStruct pollTST;
   initPollThStruct(
@@ -59,6 +58,8 @@ int main(int argc, char *argv[]){
   pollTST.funcToRun = socketViaStruct;
  
   portHostStruct pHStruct; 
+
+  word hostname = argv[1];
   pHStruct.hostName = hostname;
   pHStruct.port = port;
 
