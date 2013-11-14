@@ -9,6 +9,7 @@
 #include <pthread.h>
 
 #include "../include/ioLib.h"
+#include "../include/errors.h"
 #include "../include/cserial.h"
 #include "../include/polling.h"
 #include "../include/connections.h"
@@ -42,8 +43,7 @@ int main(int argc, char *argv[]){
     infd = c_init_serial(srcPath, targetBaudRate_int, False);
 
     if (infd == ERROR_SOCKFD_VALUE) {
-      raiseWarning("Error opening input device");
-      exit(-1);
+      raiseError("Error opening input device", True); // Fatality set to True
     }
   } else {
     infd = c_init_serialFD(infd, targetBaudRate_int, False);
@@ -73,8 +73,7 @@ int main(int argc, char *argv[]){
 #endif
   if (*sockfd == ERROR_SOCKFD_VALUE){
     if (sockfd != NULL) free(sockfd);
-    raiseWarning("Error while opening socket");
-    exit(-1);
+    raiseError("Error while opening socket", True);
   }
 
   /*

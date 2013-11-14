@@ -44,6 +44,9 @@ sigHandling:	include/sigHandling.h src/sigHandling.c include/dataTypes.h ioLib c
 polling:	include/polling.h include/constants.h src/polling.c
 	$(CC) $(CC_FLAGS) -c src/polling.c -o exec/polling.o
 
+slist:		include/SList.h src/SList.c
+	$(CC) $(CC_FLAGS) src/SList.c -o exec/SList
+
 clean:
 	cd exec/
 	find -type f -name "*.o" -exec $(RM_GEN)

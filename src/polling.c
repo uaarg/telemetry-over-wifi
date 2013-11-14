@@ -3,6 +3,7 @@
 
 #include "../include/dataTypes.h"
 #include "../include/constants.h"
+#include "../include/errors.h"
 #include "../include/ioLib.h"
 
 void *dTest(void *data){
@@ -28,7 +29,7 @@ void initPollThStruct(
 
 void pollTill(pollThStruct *pollTST){
   if (pollTST == NULL){
-    raiseWarning("NULL pollThStruct passed in");
+    raiseError("NULL pollThStruct passed in", False); // Non-fatal err
     return; 
   }
 

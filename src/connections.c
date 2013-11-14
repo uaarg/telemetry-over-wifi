@@ -10,6 +10,7 @@
 #endif
 
 #include "../include/ioLib.h"
+#include "../include/errors.h"
 #include "../include/cserial.h"
 #include "../include/polling.h"
 #include "../include/sigHandling.h"
@@ -98,7 +99,7 @@ void *msgTransit(void *data){
   fdPair *fdData = (fdPair *)data;
 
   if (fdData == NULL){
-    raiseWarning("NULL fdData passed in");
+    raiseError("NULL fdData passed in", False); // Fatality set to False
     return NULL;
   }
 
@@ -194,7 +195,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
 
     if (! nRead){
     #ifdef DEBUG
-      raiseWarning("Failed to read in a character from");
+      raiseError("Failed to read in a character from", False); // Non-fatal err
     #endif
     } else {
       int sentByteCount = send(to, sendBuf, nRead, 0);
@@ -265,7 +266,7 @@ LLInt recvData(fdPair *fDP, struct timeval tv){
     
     ssize_t expectedWriteResult = strlen(buf); 
     if (write(toFD, buf, expectedWriteResult) != expectedWriteResult){
-      raiseWarning("Write error");
+      raiseError("Write error", False); // Non fatal err
     } 
 
     free(buf);
@@ -278,7 +279,7 @@ LLInt recvData(fdPair *fDP, struct timeval tv){
 
 int runServer(const word port, FILE *ifp){
   if (ifp == NULL){
-    raiseWarning("Null file pointer passed in");
+    raiseError("Null file pointer passed in", False); // Non fatal err
     return -2;
   }
 
