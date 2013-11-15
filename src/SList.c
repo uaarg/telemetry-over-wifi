@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "../include/SList.h"
 #include "../include/errors.h"
@@ -147,7 +148,7 @@ int addToList(SList *sl, void *data) {
 
     ++(sl->size);
 
-    return 0;
+    return 1;
   }
 }
 

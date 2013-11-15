@@ -23,10 +23,10 @@ CC := gcc
 CC_FLAGS := -Wall
 
 $(CLIENT_EXEC):	Makefile src/client.c ioLib connection polling slist
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/SList.o exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
 
 $(SERVER_EXEC):	Makefile src/streamServer.c ioLib connection polling slist
-	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
+	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/SList.o exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
 
 connection:	include/connections.h src/connections.c sigHandling ioLib cserial
 	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c src/connections.c -o exec/connections.o

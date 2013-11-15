@@ -5,6 +5,7 @@
 #include "../include/errors.h"
 #include "../include/cserial.h"
 #include "../include/polling.h"
+#include "../include/sigHandling.h"
 #include "../include/connections.h"
 #include "../include/platformHandler.h"
 
@@ -49,7 +50,11 @@ int main(int argc, char *argv[]){
   } else {
     infd = c_init_serialFD(infd, targetBaudRate_int, False);
   }
+  setSigHandler(); //fire up the signal handler
 
+  if (addToTrackedResources(infd) != 1) {
+    raiseError("Cannot add the infile descriptor for tracking and proper signal handling", True);
+  }
 
   pollThStruct pollTST;
   initPollThStruct(
