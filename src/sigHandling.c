@@ -16,6 +16,22 @@
 // That will be properly freed / closed upon termination
 SList *resourcesList = NULL;
 
+void restoreTerm(void *termStorage) {
+  printf("\033[32mRestoring terminal settings\033[00m\n %p", termStorage);
+
+  if (termStorage != NULL) {
+    TermPair *tp = (TermPair *)termStorage;
+    if (tp->fd == -1) {
+      raiseError("File fd wasn't opened well", False);
+    } else {
+      tcsetattr(tp->fd, TCSANOW, &(tp->origTerm));
+      tcflush(tp->fd, TCOFLUSH);
+    }
+  } else {
+    raiseError("termStorage is NULL", False);
+  }
+}
+
 void closeAndFreeFP(void *fd) {
   if (fd != NULL) {
     close(*((int *)fd));
@@ -65,12 +81,13 @@ void setSigHandler(){
 
   // Initializing the file handle and resource tracking SList
   resourcesList = createSList();
-  initSList(resourcesList, copyIntPtr, closeAndFreeFP, freeNode); 
+
+  initSList(resourcesList, pseudoArgPass, restoreTerm, freeNode); 
 }
 
-int addToTrackedResources(int fd) {
-  int addStatus = addToList(resourcesList, (void *)&fd); 
-
+int addToTrackedResources(void *termToTrack) {
+  int addStatus = addToList(resourcesList, termToTrack); 
+  printf("Add Status :%d\n", addStatus);
   return addStatus;
 }
 

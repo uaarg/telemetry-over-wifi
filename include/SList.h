@@ -6,6 +6,7 @@
   typedef struct Node_ {
     void *data;
     int visits;
+    void (*freeFunc)(void *);
     struct Node_ *next;
   } Node;
 
@@ -48,4 +49,6 @@
 
   // Miscellaneous section 
   void *copyIntPtr(void *);
+
+  void *pseudoArgPass(void *arg);
 #endif

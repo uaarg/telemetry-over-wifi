@@ -9,6 +9,8 @@
 #include "../include/errors.h"
 #include "../include/dataTypes.h"
 
+#define DEBUG
+
 SList *createSList(void) {
   SList *newSL = NULL; 
   if ((newSL = (SList *)malloc(sizeof(SList))) == NULL) {
@@ -99,6 +101,10 @@ Node *createNode(void *data) {
   return newNode;
 }
 
+void *pseudoArgPass(void *arg) {
+  return arg;
+}
+
 void *copyIntPtr(void *data) {
   int *inew = (int *)malloc(sizeof(int));
   *inew = *(int *)data;
@@ -128,6 +134,11 @@ int addToList(SList *sl, void *data) {
     raiseError("NULL SL passed in. First create SL", False);
     return 0;
   } else {
+  #ifdef DEBUG
+    TermPair *tp = (TermPair *)data;
+    printf("Ptr value: %p\n", tp);
+    printf("slPtr->fd :: %d\n", tp->fd);
+  #endif
     if (sl->copyData == NULL) {
       raiseError(
 	"copyData function of SL is NULL. Please initialize it first", False

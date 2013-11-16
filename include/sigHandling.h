@@ -15,5 +15,7 @@
 
   void sigHandler(const int);
 
-  int addToTrackedResources(int fd);
+  int addToTrackedResources(void *);
+
+  void restoreTerm(void *termStorage);
 #endif

@@ -27,14 +27,15 @@
 #define _CSERIAL_H
   #include "dataTypes.h"
 
-  int c_init_serialFD(
-    int fd, const int speed, const Bool hw_flow_control
-  );
-
   //Offers more flexibility, allowing file paths to be passed in
   //Under the hood invokes function c_init_serialFD
-  int c_init_serial(
-    const char* devicePath, const int speed, const Bool hw_flow_control
+  void c_init_serial(
+    TermPair *tStorage, const char* devicePath, 
+    const int speed, const Bool hw_flow_control
+  );
+
+  void c_init_serialFD(
+    TermPair *termP, const int speed, const Bool hw_flow_control
   );
 
   int c_set_dtr(int fd, const Bool val_bit);

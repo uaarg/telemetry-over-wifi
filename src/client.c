@@ -20,7 +20,8 @@ int main(int argc, char *argv[]){
     exit(1);
   }
 
-  int infd = 0; //By default read from standard input unless otherwise specified
+  TermPair tp;
+  tp.fd = 0; //By default read from standard input unless otherwise specified
   int targetBaudRate_int = 57600; //Default target baud rate
 
   // Checking if the port is valid
@@ -42,18 +43,23 @@ int main(int argc, char *argv[]){
     printf("Source file: %s\n", srcPath);
   #endif
 
-    infd = c_init_serial(srcPath, targetBaudRate_int, False);
+    c_init_serial(&tp, srcPath, targetBaudRate_int, False);
 
-    if (infd == ERROR_SOCKFD_VALUE) {
+    if (tp.fd == ERROR_SOCKFD_VALUE) {
       raiseError("Error opening input device", True); // Fatality set to True
     }
+
   } else {
-    infd = c_init_serialFD(infd, targetBaudRate_int, False);
+    c_init_serialFD(&tp, targetBaudRate_int, False);
   }
+
   setSigHandler(); //fire up the signal handler
 
-  if (addToTrackedResources(infd) != 1) {
-    raiseError("Cannot add the infile descriptor for tracking and proper signal handling", True);
+  if (addToTrackedResources((void *)&tp) != 1) {
+    raiseError(
+    "Cannot add the infile descriptor for tracking and proper signal handling",
+     True
+    );
   }
 
   pollThStruct pollTST;
@@ -96,7 +102,7 @@ int main(int argc, char *argv[]){
   pthread_t sendThread; 
 
   fdPair sendFilePair; 
-  sendFilePair.fromFD = infd;
+  sendFilePair.fromFD = tp.fd;
   sendFilePair.toFD = *sockfd;
   sendFilePair.state = SENDING;
   sendFilePair.bufSize = MAX_BUF_LENGTH;
@@ -114,8 +120,8 @@ int main(int argc, char *argv[]){
 
   if (totalTransactionCount != NULL) free(totalTransactionCount);
 
-  if (infd != ERROR_SOCKFD_VALUE) 
-    close(infd);
+  if (tp.fd != ERROR_SOCKFD_VALUE) 
+    close(tp.fd);
 
   close(*sockfd);
 

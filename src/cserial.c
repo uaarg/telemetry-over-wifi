@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/termios.h>
 
+#include "../include/errors.h"
 #include "../include/cserial.h"
 
 /*
@@ -127,70 +128,78 @@ speed_t matchBaudRate(const int speed) {
   return theBaudRate;
 }
 
-int c_init_serial(
-  const char *devicePath, const int speed, const Bool hw_flow_control
+void c_init_serial(
+  TermPair *termStorage, const char *devicePath, 
+  const int speed, const Bool hw_flow_control
 ) {
-  int fd = open(devicePath, O_RDWR|O_NONBLOCK);
+  if (termStorage == NULL) {
+    raiseError("The storage for the file descriptor must not be NULL", True);
+  }
 
-  return c_init_serialFD(fd, speed, hw_flow_control);
+  termStorage->fd = open(devicePath, O_RDWR|O_NONBLOCK);
+  c_init_serialFD(termStorage, speed, hw_flow_control);
 }
 
-int c_init_serialFD(int fd, const int speed, const Bool hw_flow_control) {
+void c_init_serialFD(
+  TermPair *termP, const int speed, const Bool hw_flow_control
+  ) {
+
+  if (termP == NULL) {
+    raiseError(
+      "A non-NULL termios pair is needed to store the new term attributes", True
+    );
+  }
 
   speed_t selectedBaudRate = matchBaudRate(speed);
 
-  struct termios orig_termios, cur_termios;
-
-  if (fd == -1) {
+  if (termP->fd == -1) {
     perror("opening modem serial device : fd < 0");
-    return -1;
   }
 
-  if (tcgetattr(fd, &orig_termios)) {
+  if (tcgetattr(termP->fd, &(termP->origTerm))) {
   #ifdef DEBUG
     printf("Saved original modem serial device settings for later restoration\n");
   #endif
   }
 
-  cur_termios = orig_termios;
+  termP->newTerm = termP->origTerm;
 
   /* input modes */
-  cur_termios.c_iflag &= ~(IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK|ISTRIP|INLCR|IGNCR
-			    |ICRNL |IXON|IXANY|IXOFF|IMAXBEL);
+  termP->newTerm.c_iflag &= \
+    ~(IGNBRK|BRKINT|IGNPAR|PARMRK|INPCK|ISTRIP|INLCR|IGNCR
+      |ICRNL |IXON|IXANY|IXOFF|IMAXBEL);
   /* pas IGNCR sinon il vire les 0x0D */
-  cur_termios.c_iflag |= BRKINT;
+  termP->newTerm.c_iflag |= BRKINT;
 
   /* output_flags */
-  cur_termios.c_oflag  &=~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
+  termP->newTerm.c_oflag  &=~(OPOST|ONLCR|OCRNL|ONOCR|ONLRET);
 
   /* control modes */
   if (hw_flow_control) {
-    cur_termios.c_cflag &= ~(CSIZE|CSTOPB|CREAD|PARENB|PARODD|HUPCL|CLOCAL);
-    cur_termios.c_cflag |= CREAD|CS8|CLOCAL|CRTSCTS;
+    termP->newTerm.c_cflag &= ~(CSIZE|CSTOPB|CREAD|PARENB|PARODD|HUPCL|CLOCAL);
+    termP->newTerm.c_cflag |= CREAD|CS8|CLOCAL|CRTSCTS;
   } else {
-    cur_termios.c_cflag &= \
+    termP->newTerm.c_cflag &= \
       ~(CSIZE|CSTOPB|CREAD|PARENB|PARODD|HUPCL|CLOCAL|CRTSCTS);
 
-    cur_termios.c_cflag |= CREAD|CS8|CLOCAL;
+    termP->newTerm.c_cflag |= CREAD|CS8|CLOCAL;
   }
 
   /* local modes */
-  cur_termios.c_lflag &= ~(ISIG|ICANON|IEXTEN|ECHO|FLUSHO|PENDIN);
-  cur_termios.c_lflag |= NOFLSH;
+  termP->newTerm.c_lflag &= ~(ISIG|ICANON|IEXTEN|ECHO|FLUSHO|PENDIN);
+  termP->newTerm.c_lflag |= NOFLSH;
 
-  if (cfsetspeed(&cur_termios, selectedBaudRate)) {
+  if (cfsetspeed(&(termP->newTerm), selectedBaudRate)) {
   #ifdef DEBUG
     printf("setting modem serial device speed\n");
   #endif
   }
 
-  if (tcsetattr(fd, TCSADRAIN, &cur_termios)) {
+  if (tcsetattr(termP->fd, TCSADRAIN, &(termP->newTerm))) {
   #ifdef DEBUG
     printf("setting modem serial device attr\n");
   #endif
   }
-
-  return fd;
 }
 
 int c_set_dtr(int fd, Bool val_bit) {
