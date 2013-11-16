@@ -6,7 +6,10 @@
   typedef struct Node_ {
     void *data;
     int visits;
-    void (*freeFunc)(void *);
+    // Optional Custom function for freeing data
+    // However, when set, it's presence overrides that of any 
+    // globally provided function ie The normal scoping rules
+    void (*freeFunc)(void *); 
     struct Node_ *next;
   } Node;
 
@@ -43,6 +46,18 @@
   // Adds argument to the sl 
   int addToList(SList *sl, void *data);
 
+  // Allows you to add any data type to the SList with a custom 
+  // data copier as well as a custom data freeing function.
+  int addToListWithFuncs(
+    SList *sl, void *data, void * (*copier)(void *), void (*dataFreer)(void *)
+  );
+
+  // Adds an element with content data, as well the
+  // optional localized data freeing function
+  Node *addNodeAndFunc(Node *n, void *data, void (*dataFreer)(void *));
+
+  // Adds an element with content data, but sets the optional localized
+  // data freeing function to NULL
   Node *addNode(Node *n, void *data);
 
   int freeNode(Node *n, void (*freeData)(void *));

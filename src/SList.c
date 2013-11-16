@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include "../include/SList.h"
@@ -33,18 +34,33 @@ SList *createSList(void) {
 
 int freeNode(Node *n, void (*freeData)(void *)) {
   int freeCount = 0;
-  if (freeData == NULL) {
-    raiseError("DataFree function cannot be NULL", False);
+
+  if (n != NULL) {
+
+    void (*dataFreer)(void *) = freeData;
+
+    // Scoping rules:: Local variable overrides the global
+    if (n->freeFunc != NULL)
+      dataFreer = n->freeFunc;	 
+
+    if (dataFreer == NULL) {
+      raiseError("DataFree function cannot be NULL", False);
+    } else {
+      while (n != NULL) {
+	Node *tmp = n->next;
+	dataFreer(n->data);
+
+	free(n);
+
+	n = tmp;
+	++freeCount;
+      }
+    } 
+
   } else {
-    while (n != NULL) {
-      Node *tmp = n->next;
-      freeData(n->data);
-
-      free(n);
-
-      n = tmp;
-      ++freeCount;
-    }
+  #ifdef DEBUG
+    raiseError("NULL node cannot be freed", False); // Non-fatal
+  #endif
   }
 
   return freeCount;
@@ -98,11 +114,21 @@ Node *createNode(void *data) {
   newNode->next = NULL;
   newNode->visits = 0;
 
+  // Optional function to enable freeing of data
+  newNode->freeFunc = NULL;
+
   return newNode;
 }
 
 void *pseudoArgPass(void *arg) {
   return arg;
+}
+
+void *copyDblPtr(void *data) {
+  double *inew = (double *)malloc(sizeof(double));
+  *inew = *(double *)data;
+
+  return (void *)inew;
 }
 
 void *copyIntPtr(void *data) {
@@ -113,6 +139,13 @@ void *copyIntPtr(void *data) {
 }
 
 Node *addNode(Node *n, void *data) {
+  // In this case we'll skip adding the optional data freeing function
+  // localized to the newly created node
+  return addNodeAndFunc(n, data, NULL);
+}
+
+Node *addNodeAndFunc(Node *n, void *data, void (*dataFreer)(void *)) {
+
   if (data == NULL) {
     return 0;
   }
@@ -125,21 +158,33 @@ Node *addNode(Node *n, void *data) {
   temp->next = n;
   n = temp;
 
+  n->freeFunc = dataFreer;
   return n;
 }
 
 int addToList(SList *sl, void *data) {
+  // The last two arguments are set to NULL to allow using 
+  // the copy and data freeing functions set in the SList itself
+  // instead of custom ones for the node itself
+  return addToListWithFuncs(sl, data, NULL, NULL);
+}
+
+int addToListWithFuncs(
+  SList *sl, void *data, void * (*copier)(void *), void (*dataFreer)(void *)
+) {
   if (sl == NULL) {
     // Non-fatal err -- treated as a warning
     raiseError("NULL SL passed in. First create SL", False);
     return 0;
   } else {
-  #ifdef DEBUG
-    TermPair *tp = (TermPair *)data;
-    printf("Ptr value: %p\n", tp);
-    printf("slPtr->fd :: %d\n", tp->fd);
-  #endif
-    if (sl->copyData == NULL) {
+    void * (*copyingFunc)(void *) = sl->copyData;
+   
+    // Scoping rules: The defined function takes higher precedence than the 
+    // SL's own copier function
+    if (copier != NULL) 
+      copyingFunc = copier;
+
+    if (copyingFunc == NULL) {
       raiseError(
 	"copyData function of SL is NULL. Please initialize it first", False
       );
@@ -147,10 +192,10 @@ int addToList(SList *sl, void *data) {
     }
 
     if (sl->head == NULL) { // First time adding data to this SL
-      sl->head = addNode(sl->head, sl->copyData(data));
+      sl->head = addNodeAndFunc(sl->head, copyingFunc(data), dataFreer);
       sl->tail = sl->head->next;
     } else {
-      sl->tail = addNode(sl->tail, sl->copyData(data));
+      sl->tail = addNodeAndFunc(sl->tail, copyingFunc(data), dataFreer);
     }
 
     // Make sure we've always got the head linked to the tail
@@ -167,6 +212,10 @@ inline unsigned int getSize(SList *sl) {
   return (sl == NULL ? 0 : sl->size);
 }
 
+void *strCopier(void *data) {
+  return (void *)strdup((char *)data);
+}
+
 #ifdef SAMPLE_RUN
 int main() {
 
@@ -174,9 +223,24 @@ int main() {
   initSList(sl, copyIntPtr, free, freeNode); 
 
   int i;
-  for (i=0; i < 10000000; ++i) {
+  // Testing with integers 
+  for (i=0; i < 100000; ++i) {
     addToList(sl, &i);
   }
+
+  // Testing with doubles
+  double d;
+  for (d=300.0; d > 200.0; d -= 0.5) {
+    // printf("dd: %.2f\n", d);
+    addToListWithFuncs(sl, &d, copyDblPtr, free);
+  }
+
+  char *s = "ODEKE\0";
+  char *msg = "This is a test! Count down is on\0";
+
+  // Testing with these strings 
+  addToListWithFuncs(sl, (void *)s, strCopier, free);
+  addToListWithFuncs(sl, (void *)msg, strCopier, free);
 
   printf("SL size: %u\n", getSize(sl));
 
