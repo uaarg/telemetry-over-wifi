@@ -10,6 +10,8 @@
     // However, when set, it's presence overrides that of any 
     // globally provided function ie The normal scoping rules
     void (*freeFunc)(void *); 
+    // Might need information on the data copier function
+    void * (*dataCopier)(void *); 
     struct Node_ *next;
   } Node;
 
@@ -33,6 +35,10 @@
 
   inline unsigned int getSize(SList *sl);
 
+  inline void *getData(Node *n);
+
+  inline void *peek(SList *sl);
+
   // Creates an SList-memory worth on the heap. Initializes the SList's
   // size to zero, set's it's head and tail to NULL, as well as its
   // member functions to NULL and returns the initialized SList
@@ -49,12 +55,16 @@
   // Allows you to add any data type to the SList with a custom 
   // data copier as well as a custom data freeing function.
   int addToListWithFuncs(
-    SList *sl, void *data, void * (*copier)(void *), void (*dataFreer)(void *)
+    SList *sl, void *data, void * (*copier)(void *), 
+    void (*dataFreer)(void *)
   );
 
   // Adds an element with content data, as well the
   // optional localized data freeing function
-  Node *addNodeAndFunc(Node *n, void *data, void (*dataFreer)(void *));
+  Node *addNodeAndFunc(
+    Node *n, void *data, void *(dataCopier)(void *), 
+    void (*dataFreer)(void *)
+  );
 
   // Adds an element with content data, but sets the optional localized
   // data freeing function to NULL
@@ -66,4 +76,11 @@
   void *copyIntPtr(void *);
 
   void *pseudoArgPass(void *arg);
+
+  // Get what's at the head -- Returns READ-ONLY data don't attempt to free
+  void *peek(SList *sl);
+
+  // Move the head to the next pointer returning what was 
+  // the previous head's content, FIFO style
+  void *pop(SList *sl);
 #endif

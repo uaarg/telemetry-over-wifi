@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <math.h>
 
 #include "../include/SList.h"
 #include "../include/errors.h"
@@ -137,15 +138,18 @@ void *copyIntPtr(void *data) {
 
   return (void *)inew;
 }
-
+/*
 Node *addNode(Node *n, void *data) {
   // In this case we'll skip adding the optional data freeing function
   // localized to the newly created node
-  return addNodeAndFunc(n, data, NULL);
+  return addNodeAndFunc(n, data, NULL, NULL);
 }
+*/
 
-Node *addNodeAndFunc(Node *n, void *data, void (*dataFreer)(void *)) {
-
+Node *addNodeAndFunc(
+  Node *n, void *data, void *(dataCopier)(void *), 
+  void (*dataFreer)(void *)
+) {
   if (data == NULL) {
     return 0;
   }
@@ -154,10 +158,12 @@ Node *addNodeAndFunc(Node *n, void *data, void (*dataFreer)(void *)) {
   printf("%s:: Data %p \n", __func__, data);
 #endif
 
-  Node *temp = createNode(data);
+  void *dataCopy = dataCopier(data);
+  Node *temp = createNode(dataCopy);
   temp->next = n;
   n = temp;
 
+  n->dataCopier = dataCopier;
   n->freeFunc = dataFreer;
   return n;
 }
@@ -170,7 +176,8 @@ int addToList(SList *sl, void *data) {
 }
 
 int addToListWithFuncs(
-  SList *sl, void *data, void * (*copier)(void *), void (*dataFreer)(void *)
+  SList *sl, void *data, void * (*copier)(void *), 
+  void (*dataFreer)(void *)
 ) {
   if (sl == NULL) {
     // Non-fatal err -- treated as a warning
@@ -192,10 +199,10 @@ int addToListWithFuncs(
     }
 
     if (sl->head == NULL) { // First time adding data to this SL
-      sl->head = addNodeAndFunc(sl->head, copyingFunc(data), dataFreer);
+      sl->head = addNodeAndFunc(sl->head, data, copyingFunc, dataFreer);
       sl->tail = sl->head->next;
     } else {
-      sl->tail = addNodeAndFunc(sl->tail, copyingFunc(data), dataFreer);
+      sl->tail = addNodeAndFunc(sl->tail, data, copyingFunc, dataFreer);
     }
 
     // Make sure we've always got the head linked to the tail
@@ -208,6 +215,8 @@ int addToListWithFuncs(
   }
 }
 
+
+
 inline unsigned int getSize(SList *sl) {
   return (sl == NULL ? 0 : sl->size);
 }
@@ -216,15 +225,60 @@ void *strCopier(void *data) {
   return (void *)strdup((char *)data);
 }
 
+inline void *getData(Node *n) {
+  return n == NULL ? NULL : n->data;
+}
+
+inline void *peek(SList *sl) {
+  return sl == NULL ? NULL : getData(sl->head);
+}
+
+void *pop(SList *sl) {
+  if (! getSize(sl)) {
+  #ifdef DEBUG
+    // Non-fatal error
+    raiseError("Cannot peek from a NULL sl", False);
+  #endif
+    return NULL;
+  } else {
+    Node *prevHead = sl->head;
+    if (prevHead != NULL) {
+
+      void * (*copyFunc)(void *) = sl->copyData;
+      if (sl->head->dataCopier != NULL)
+	copyFunc = prevHead->dataCopier;
+
+      void (*dataFreer)(void *) = prevHead->freeFunc;
+
+      if (dataFreer == NULL) {
+	raiseError("Data freeing function cannot be NULL", True);
+      } else {
+	void *copiedData = copyFunc(prevHead->data);
+	dataFreer(prevHead->data);
+	sl->head = prevHead->next;
+
+	free(prevHead);
+	--sl->size;
+	return copiedData;
+      }
+    } else {
+    #ifdef DEBUG
+      raiseError("Trying to pop from an empty node", False);
+    #endif
+      return NULL;
+    }
+  }
+}
+
 #ifdef SAMPLE_RUN
 int main() {
 
   SList *sl = createSList();
   initSList(sl, copyIntPtr, free, freeNode); 
-
+  /*
   int i;
   // Testing with integers 
-  for (i=0; i < 100000; ++i) {
+  for (i=0; i < 10; ++i) {
     addToList(sl, &i);
   }
 
@@ -234,13 +288,31 @@ int main() {
     // printf("dd: %.2f\n", d);
     addToListWithFuncs(sl, &d, copyDblPtr, free);
   }
-
+  */
   char *s = "ODEKE\0";
   char *msg = "This is a test! Count down is on\0";
 
   // Testing with these strings 
   addToListWithFuncs(sl, (void *)s, strCopier, free);
+  int i;
+  for (i=0; i < 5; ++i) {
+    char *peek1 = peek(sl);
+    printf("Peeked: %s\n", peek1);
+  }
+
+  void *popd1 = pop(sl);
+  printf("Popped data %s\n", (char *)popd1);
+  if (popd1 != NULL) free(popd1);
+
   addToListWithFuncs(sl, (void *)msg, strCopier, free);
+
+  for (i=0; i < 3; ++i) {
+    char *peek2 = peek(sl);
+    printf("Peeked2: %s\n", peek2);
+    void *popd = pop(sl);
+    if (popd != NULL) 
+      free(popd);
+  }
 
   printf("SL size: %u\n", getSize(sl));
 
