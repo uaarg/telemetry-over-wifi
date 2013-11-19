@@ -81,6 +81,6 @@
   void *peek(SList *sl);
 
   // Move the head to the next pointer returning what was 
-  // the previous head's content, FIFO style
+  // the previous head's content, LIFO style
   void *pop(SList *sl);
 #endif
