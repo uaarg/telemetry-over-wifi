@@ -32,7 +32,7 @@ void initPollThStruct(
 
 void pollTill(pollThStruct *pollTST){
   if (pollTST == NULL){
-    raiseError("NULL pollThStruct passed in", False); // Non-fatal err
+    raiseWarning("NULL pollThStruct passed in"); // Non-fatal err
     return; 
   }
 

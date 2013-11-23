@@ -133,7 +133,7 @@ void c_init_serial(
   const int speed, const Bool hw_flow_control
 ) {
   if (termStorage == NULL) {
-    raiseError("The storage for the file descriptor must not be NULL", True);
+    raiseError("The storage for the file descriptor must not be NULL");
   }
 
   termStorage->fd = open(devicePath, O_RDWR|O_NONBLOCK);
@@ -146,7 +146,7 @@ void c_init_serialFD(
 
   if (termP == NULL) {
     raiseError(
-      "A non-NULL termios pair is needed to store the new term attributes", True
+      "A non-NULL termios pair is needed to store the new term attributes"
     );
   }
 

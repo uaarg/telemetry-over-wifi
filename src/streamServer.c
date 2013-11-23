@@ -18,7 +18,7 @@ int main(int argc, char *args[]){
   int portNumber;
   if ((sscanf(args[1],"%d",&portNumber) != 1) || (portNumber > MAX_PORT_VALUE)){
     // Fatal-error here
-    raiseError("Please enter an integer between [0, 65536] for the port", True);
+    raiseError("Please enter an integer between [0, 65536] for the port");
   }
 
   char *filePath = args[2];

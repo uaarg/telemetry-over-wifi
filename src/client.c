@@ -29,7 +29,7 @@ int main(int argc, char *argv[]){
   word port = argv[2];
 
   if ((sscanf(port, "%d", &portValue) != 1) || (portValue > MAX_PORT_VALUE)) {
-    raiseError("Port number should range from [0 to 65536]", True);
+    raiseWarning("Port number should range from [0 to 65536]");
   }
 
   if (argc > 3) {
@@ -46,7 +46,7 @@ int main(int argc, char *argv[]){
     c_init_serial(&tp, srcPath, targetBaudRate_int, False);
 
     if (tp.fd == ERROR_SOCKFD_VALUE) {
-      raiseError("Error opening input device", True); // Fatality set to True
+      raiseError("Error opening input device");
     }
 
   } else {
@@ -57,8 +57,7 @@ int main(int argc, char *argv[]){
 
   if (addToTrackedResources((void *)&tp) != 1) {
     raiseError(
-    "Cannot add the infile descriptor for tracking and proper signal handling",
-     True
+    "Cannot add the infile descriptor for tracking and proper signal handling"
     );
   }
 
@@ -85,7 +84,7 @@ int main(int argc, char *argv[]){
 #endif
   if (*sockfd == ERROR_SOCKFD_VALUE){
     if (sockfd != NULL) free(sockfd);
-    raiseError("Error while opening socket", True);
+    raiseError("Error while opening socket");
   }
 
   /*

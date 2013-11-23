@@ -22,13 +22,13 @@ void restoreTerm(void *termStorage) {
   if (termStorage != NULL) {
     TermPair *tp = (TermPair *)termStorage;
     if (tp->fd == -1) {
-      raiseError("File fd wasn't opened well", False);
+      raiseWarning("File fd wasn't opened well");
     } else {
       tcsetattr(tp->fd, TCSANOW, &(tp->origTerm));
       tcflush(tp->fd, TCOFLUSH);
     }
   } else {
-    raiseError("termStorage is NULL", False);
+    raiseWarning("termStorage is NULL");
   }
 }
 
@@ -37,7 +37,7 @@ void closeAndFreeFP(void *fd) {
     close(*((int *)fd));
     free(fd);
   } else {
-    raiseError("File descriptor to be closed cannot be NULL", False);
+    raiseWarning("File descriptor to be closed cannot be NULL");
   }
 }
 
@@ -55,18 +55,18 @@ void shutDown(){
   exit(0);
 }
 
-void sigHandler(const int signalNum){
-  switch(signalNum){
-    case SIGINT:{
+void sigHandler(const int signalNum) {
+  switch(signalNum) {
+    case SIGINT: {
 	terminate();
 	break;
     }
-    case SIGTERM:{
+    case SIGTERM: {
 	shutDown();
 	break;
     }
 	
-    default:{
+    default: {
 	fprintf(stderr, "\033[31mUnhandled signal %d\n\033[00m", signalNum);
 	break;
     }

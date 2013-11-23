@@ -20,13 +20,13 @@ void clearCursorLine(FILE *screen){
 
 int getChars(int fd, word destStr, const int len, int *eofState){
   if (destStr == NULL){
-    raiseError("NULL string storage passed in.", False); // Non-fatal err
+    raiseWarning("NULL string storage passed in."); // Non-fatal err
     return -1;
   }
 
   
   if (fd == ERROR_SOCKFD_VALUE){
-    raiseError("NULL file descriptor cannot be read from.", False);
+    raiseWarning("NULL file descriptor cannot be read from.");
     return -1;
   }
 

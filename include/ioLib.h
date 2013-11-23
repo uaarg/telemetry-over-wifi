@@ -6,13 +6,6 @@
 #define _IO_LIB_H
   #include "dataTypes.h"
 
-  #define raiseWarning(warning){\
-    fprintf(stderr,\
-      "\033[31mWarning %s on line %d in function \"%s\" in file %s\n\033[00m",\
-      warning, __LINE__, __func__, __FILE__\
-    );\
-  }
-
   //Clears the line that the head of the file's reader is currently positioned
   //Performs a flush operation on the file after the clearing
   void clearCursorLine(FILE *);

@@ -18,7 +18,7 @@ SList *createSList(void) {
   if ((newSL = (SList *)malloc(sizeof(SList))) == NULL) {
     // Fatal-error detected
     raiseError(
-      "Run-out of memory, please release or debug memory allocations", True
+      "Run-out of memory, please release or debug memory allocations"
     );
   }
 
@@ -45,7 +45,7 @@ int freeNode(Node *n, void (*freeData)(void *)) {
       dataFreer = n->freeFunc;	 
 
     if (dataFreer == NULL) {
-      raiseError("DataFree function cannot be NULL", False);
+      raiseWarning("DataFree function cannot be NULL");
     } else {
       while (n != NULL) {
 	Node *tmp = n->next;
@@ -60,7 +60,7 @@ int freeNode(Node *n, void (*freeData)(void *)) {
 
   } else {
   #ifdef DEBUG
-    raiseError("NULL node cannot be freed", False); // Non-fatal
+    raiseWarning("NULL node cannot be freed"); // Non-fatal
   #endif
   }
 
@@ -75,7 +75,7 @@ int freeSList(SList *sl) {
     printf("nFrees: %d\n", nFrees);
   #endif
     if (nFrees != sl->size) {
-      raiseError("Number of freed nodes is not equal to the SL size", False);
+      raiseWarning("Number of freed nodes is not equal to the SL size");
     }
     
     sl->size = 0;
@@ -92,7 +92,7 @@ void initSList(
     void (*dataFree)(void *), int (*nodeFree)(Node *, void (*)(void *))
 ) {
   if (sl == NULL) {
-    raiseError("NULL singly linked list passed in for initialization", False);
+    raiseWarning("NULL singly linked list passed in for initialization");
   } else {
     sl->size = 0;
     sl->copyData = dataCopy;
@@ -107,7 +107,7 @@ Node *createNode(void *data) {
   if ((newNode = (Node *)malloc(sizeof(Node))) == NULL) {
     // Fatal-error, wish you a quick recovery
     raiseError(
-      "Run-out of memory, please release or debug memory allocations", True
+      "Run-out of memory, please release or debug memory allocations"
     );
   }
 
@@ -181,7 +181,7 @@ int addToListWithFuncs(
 ) {
   if (sl == NULL) {
     // Non-fatal err -- treated as a warning
-    raiseError("NULL SL passed in. First create SL", False);
+    raiseWarning("NULL SL passed in. First create SL");
     return 0;
   } else {
     void * (*copyingFunc)(void *) = sl->copyData;
@@ -192,8 +192,8 @@ int addToListWithFuncs(
       copyingFunc = copier;
 
     if (copyingFunc == NULL) {
-      raiseError(
-	"copyData function of SL is NULL. Please initialize it first", False
+      raiseWarning(
+	"copyData function of SL is NULL. Please initialize it first"
       );
       return 0;
     }
@@ -236,8 +236,7 @@ inline void *peek(SList *sl) {
 void *pop(SList *sl) {
   if (! getSize(sl)) {
   #ifdef DEBUG
-    // Non-fatal error
-    raiseError("Cannot peek from a NULL sl", False);
+    raiseWarning("Cannot peek from a NULL sl");
   #endif
     return NULL;
   } else {
@@ -251,7 +250,7 @@ void *pop(SList *sl) {
       void (*dataFreer)(void *) = prevHead->freeFunc;
 
       if (dataFreer == NULL) {
-	raiseError("Data freeing function cannot be NULL", True);
+	raiseError("Data freeing function cannot be NULL");
       } else {
 	void *copiedData = copyFunc(prevHead->data);
 	dataFreer(prevHead->data);
@@ -263,7 +262,7 @@ void *pop(SList *sl) {
       }
     } else {
     #ifdef DEBUG
-      raiseError("Trying to pop from an empty node", False);
+      raiseWarning("Trying to pop from an empty node");
     #endif
       return NULL;
     }

@@ -104,7 +104,7 @@ void *msgTransit(void *data){
   fdPair *fdData = (fdPair *)data;
 
   if (fdData == NULL){
-    raiseError("NULL fdData passed in", False); // Fatality set to False
+    raiseWarning("NULL fdData passed in"); // Fatality set to False
     return NULL;
   }
 
@@ -206,7 +206,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
 
     if (! nRead){
     #ifdef DEBUG
-      raiseError("Failed to read in a character from", False); // Non-fatal err
+      raiseWarning("Failed to read in a character from");
     #endif
     } else {
       int sentByteCount = send(to, sendBuf, nRead, 0);
@@ -277,7 +277,7 @@ LLInt recvData(fdPair *fDP, struct timeval tv){
     
     ssize_t expectedWriteResult = strlen(buf); 
     if (write(toFD, buf, expectedWriteResult) != expectedWriteResult){
-      raiseError("Write error", False); // Non fatal err
+      raiseWarning("Write error");
     } 
 
     free(buf);
@@ -290,7 +290,7 @@ LLInt recvData(fdPair *fDP, struct timeval tv){
 
 int runServer(const word port, FILE *ifp){
   if (ifp == NULL){
-    raiseError("Null file pointer passed in", False); // Non fatal err
+    raiseWarning("Null file pointer passed in");
     return -2;
   }
 
