@@ -243,23 +243,23 @@ void *pop(SList *sl) {
     Node *prevHead = sl->head;
     if (prevHead != NULL) {
 
+      /*
       void * (*copyFunc)(void *) = sl->copyData;
       if (sl->head->dataCopier != NULL)
 	copyFunc = prevHead->dataCopier;
 
-      void (*dataFreer)(void *) = prevHead->freeFunc;
+      // void (*dataFreer)(void *) = prevHead->freeFunc;
 
       if (dataFreer == NULL) {
 	raiseError("Data freeing function cannot be NULL");
       } else {
-	void *copiedData = copyFunc(prevHead->data);
-	dataFreer(prevHead->data);
-	sl->head = prevHead->next;
+      */
+      void *copiedData = prevHead->data;
+      sl->head = prevHead->next;
 
-	free(prevHead);
-	--sl->size;
-	return copiedData;
-      }
+      free(prevHead);
+      --sl->size;
+      return copiedData;
     } else {
     #ifdef DEBUG
       raiseWarning("Trying to pop from an empty node");
@@ -304,6 +304,7 @@ int main() {
   if (popd1 != NULL) free(popd1);
 
   addToListWithFuncs(sl, (void *)msg, strCopier, free);
+  printf("SL size: %u\n", getSize(sl));
 
   for (i=0; i < 3; ++i) {
     char *peek2 = peek(sl);
@@ -312,6 +313,13 @@ int main() {
     if (popd != NULL) 
       free(popd);
   }
+
+  addToListWithFuncs(sl, (void *)msg, strCopier, free);
+  printf("SL size: %u\n", getSize(sl));
+
+  void *popD = pop(sl);
+  printf("Popd %s\n", (char *)popD); 
+  free(popD);
 
   printf("SL size: %u\n", getSize(sl));
 
