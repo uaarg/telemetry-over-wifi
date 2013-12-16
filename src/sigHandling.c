@@ -50,8 +50,10 @@ void terminate(){
 }
 
 void shutDown(){
-  //Will define proper shutdown of resources
   fprintf(stderr, "Shutting down...\n");
+
+  // Cleanup now
+  freeSList(resourcesList);
   exit(0);
 }
 
