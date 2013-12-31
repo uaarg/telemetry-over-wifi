@@ -176,8 +176,7 @@ int addToList(SList *sl, void *data) {
 }
 
 int addToListWithFuncs(
-  SList *sl, void *data, void * (*copier)(void *), 
-  void (*dataFreer)(void *)
+  SList *sl, void *data, void * (*copier)(void *), void (*dataFreer)(void *)
 ) {
   if (sl == NULL) {
     // Non-fatal err -- treated as a warning
@@ -222,7 +221,7 @@ inline unsigned int getSize(SList *sl) {
 }
 
 void *strCopier(void *data) {
-  return (void *)strdup((char *)data);
+  return data == NULL ? NULL : (void *)strdup((char *)data);
 }
 
 inline void *getData(Node *n) {
@@ -233,31 +232,25 @@ inline void *peek(SList *sl) {
   return sl == NULL ? NULL : getData(sl->head);
 }
 
+inline Node *getNext(Node *n) {
+  return n == NULL ? NULL : n->next;
+}
+
 void *pop(SList *sl) {
   if (! getSize(sl)) {
   #ifdef DEBUG
-    raiseWarning("Cannot peek from a NULL sl");
+    raiseWarning("Cannot pop from a NULL sl");
   #endif
     return NULL;
   } else {
     Node *prevHead = sl->head;
-    if (prevHead != NULL) {
-
-      /*
-      void * (*copyFunc)(void *) = sl->copyData;
-      if (sl->head->dataCopier != NULL)
-	copyFunc = prevHead->dataCopier;
-
-      // void (*dataFreer)(void *) = prevHead->freeFunc;
-
-      if (dataFreer == NULL) {
-	raiseError("Data freeing function cannot be NULL");
-      } else {
-      */
-      void *copiedData = prevHead->data;
-      sl->head = prevHead->next;
+    if (sl->head != NULL) {
+      void *copiedData = getData(sl->head);
+      sl->head = getNext(sl->head);
 
       free(prevHead);
+      prevHead = NULL;
+
       --sl->size;
       return copiedData;
     } else {

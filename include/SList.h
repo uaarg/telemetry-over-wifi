@@ -1,5 +1,5 @@
 // Author: Emmanuel Odeke <odeke@ualberta.ca>
-// Singly linked list
+// List implementation
 
 #ifndef _SLIST_H
 #define _SLIST_H
@@ -67,15 +67,10 @@
   );
 
   // Adds an element with content data, but sets the optional localized
-  // data freeing function to NULL
+  // data freeing function, to NULL
   Node *addNode(Node *n, void *data);
 
   int freeNode(Node *n, void (*freeData)(void *));
-
-  // Miscellaneous section 
-  void *copyIntPtr(void *);
-
-  void *pseudoArgPass(void *arg);
 
   // Get what's at the head -- Returns READ-ONLY data don't attempt to free
   void *peek(SList *sl);
@@ -83,4 +78,13 @@
   // Move the head to the next pointer returning what was 
   // the previous head's content, LIFO style
   void *pop(SList *sl);
+
+  inline Node *getNext(Node *n);
+
+  // Miscellaneous section 
+  void *strCopier(void *data);
+
+  void *copyIntPtr(void *);
+
+  void *pseudoArgPass(void *arg);
 #endif
