@@ -94,7 +94,7 @@ Bool revertTermSettings(TermPair *tP){
 void initTermPair(const int fd, TermPair *tP){
   if (fd != ERROR_SOCKFD_VALUE && tP != NULL){
     tcgetattr(fd, &(tP->origTerm));
-    tcgetattr(fd, &(tP->newTerm));
+    tcsetattr(fd, TCSANOW, &(tP->newTerm));
     tP->fd = fd;
   }
 }
