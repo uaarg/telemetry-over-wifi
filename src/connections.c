@@ -23,12 +23,6 @@
 #include "../include/platformHandler.h" 
 #include "../include/constants.h"
 
-void initBiSocket(BiSocket *sock){
-  if (sock != NULL){
-    memset(sock, ERROR_SOCKFD_VALUE, sizeof(sock));
-  }
-}  
-
 void *get_in_addr(struct sockaddr *sa){
   // Brian Beej showed me how to do this one
   if (sa->sa_family == AF_INET) {
@@ -58,7 +52,7 @@ int socketConnection(const word TARGET_HOST, const word PORT){
 
   memset(&hints, 0, sizeof(hints));
 
-  hints.ai_family = AF_UNSPEC; //IPv4.6 agnostic
+  hints.ai_family = AF_UNSPEC; //IPv4/6 agnostic
   hints.ai_socktype = SOCK_DGRAM; // UDP
 
   int addrResolveResult = getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);

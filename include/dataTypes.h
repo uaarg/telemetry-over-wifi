@@ -27,10 +27,6 @@
   typedef char *word;
 
   typedef struct {
-    int sockFD;
-  } BiSocket;
-
-  typedef struct {
     int fromFD;
     int toFD;
     unsigned int bufSize;
