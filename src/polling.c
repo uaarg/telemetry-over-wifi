@@ -9,9 +9,9 @@
 #include "../include/errors.h"
 #include "../include/ioLib.h"
 
-void *dTest(void *data){
+void *dTest(void *data) {
   int *tP = (int *)data;
-  if (*tP > 0){
+  if (*tP > 0) {
     --(*tP);
     return NULL;
   }
@@ -21,8 +21,8 @@ void *dTest(void *data){
 void initPollThStruct(
   pollThStruct *pTSt, double timeOut, 
   void *errorValue, Comparison comp(void *, void *)
-){
-  if (pTSt != NULL){
+) {
+  if (pTSt != NULL) {
     pTSt->tryCount = INIT_TRY_COUNT;
     pTSt->timeOut = timeOut;
     pTSt->errorValue = errorValue;
@@ -30,14 +30,14 @@ void initPollThStruct(
   }
 }
 
-void pollTill(pollThStruct *pollTST){
-  if (pollTST == NULL){
+void pollTill(pollThStruct *pollTST) {
+  if (pollTST == NULL) {
     raiseWarning("NULL pollThStruct passed in"); // Non-fatal err
     return; 
   }
 
   const double timeOutSecs = pollTST->timeOut;
-  while (1){
+  while (1) {
     pollTST->savSuccess = pollTST->funcToRun(pollTST->arg);
   #ifdef DEBUG
     printf("%d\n", *(int *)pollTST->savSuccess);
@@ -45,20 +45,21 @@ void pollTill(pollThStruct *pollTST){
     Comparison vComparison = pollTST->valComp(
       pollTST->savSuccess, pollTST->errorValue
     );
-    if (vComparison != EQ){
+
+    if (vComparison != EQ) {
       fprintf(stderr, "\033[33mDone Polling as condition met\n\033[00m");
       break;
-    }else{
+    } else {
       clearCursorLine(stderr);
       fprintf(stderr, "Try Count: %d Sleeping for %1.2f seconds\r", 
-	++(pollTST->tryCount), timeOutSecs);
+        ++(pollTST->tryCount), timeOutSecs);
     }
 
     sleep(timeOutSecs);
   }
 }
 
-Comparison intPtrComp(void *a, void *b){
+Comparison intPtrComp(void *a, void *b) {
   int *aInt = (int *)a;
   int *bInt = (int *)b;
 
@@ -66,7 +67,7 @@ Comparison intPtrComp(void *a, void *b){
   printf("intComp a %d b %d\n", *aInt, *bInt);
 #endif
 
-  if (*aInt != *bInt){
+  if (*aInt != *bInt) {
     return *aInt < *bInt ? LT : GT;
   }
   
@@ -74,7 +75,7 @@ Comparison intPtrComp(void *a, void *b){
 }
 
 #ifdef DEBUG
-int main(){
+int main() {
   pollThStruct pollTST;
   initPollThStruct(&pollTST, 1, NULL);
   int testArg = 10;

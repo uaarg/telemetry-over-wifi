@@ -1,10 +1,9 @@
 #ifndef _CONSTANTS_H
 #define _CONSTANTS_H
   static const unsigned int INIT_TRY_COUNT = 0;
-  static const word FILE_CREATION_FAILURE_MSG = \
-	"Please check your file permissions or check for the restrictions on \
-	the number of files that can be opened at once";
-	
+  static const char *FILE_CREATION_FAILURE_MSG = \
+    "Please check your file permissions or check for the restrictions on \
+the number of files that can be opened at once";
   static const int BACKLOG = 20;//How many pending connections queue will hold
   static const int BUF_SIZ = 32;//Arbitrary size here
 

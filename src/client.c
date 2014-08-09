@@ -13,7 +13,7 @@
   "Usage:: \033[33m./client <hostname> <port> <serialdevice> <baudrate>\n\t\033[32m\
     Reads implicitly from standard input thus allows piping\033[00m\n"
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
   if (argc < 3) {
     fprintf(stderr, USAGE_CLIENT);
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]){
 
   // Checking if the port is valid
   unsigned int portValue;
-  word port = argv[2];
+  char *port = argv[2];
 
   if ((sscanf(port, "%d", &portValue) != 1) || (portValue > MAX_PORT_VALUE)) {
     raiseWarning("Port number should range from [0 to 65536]");
@@ -38,7 +38,7 @@ int main(int argc, char *argv[]){
       targetBaudRate_int = atoi(argv[4]);
     }
 
-    const word srcPath = argv[3];
+    const char *srcPath = argv[3];
   #ifdef DEBUG
     printf("Source file: %s\n", srcPath);
   #endif
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]){
  
   portHostStruct pHStruct; 
 
-  word hostname = argv[1];
+  char *hostname = argv[1];
   pHStruct.hostName = hostname;
   pHStruct.port = port;
 
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]){
 #ifdef DEBUG
   printf("socKetFileDescriptor value %d\n", *sockfd);
 #endif
-  if (*sockfd == ERROR_SOCKFD_VALUE){
+  if (*sockfd == ERROR_SOCKFD_VALUE) {
     if (sockfd != NULL) free(sockfd);
     raiseError("Error while opening socket");
   }

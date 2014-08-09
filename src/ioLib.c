@@ -9,7 +9,7 @@
 #include "../include/errors.h"
 #include "../include/constants.h"
 
-void clearCursorLine(FILE *screen){
+void clearCursorLine(FILE *screen) {
   FILE *targetScreen = screen;
   if (targetScreen == NULL)
     targetScreen = stdout;
@@ -18,14 +18,14 @@ void clearCursorLine(FILE *screen){
   fflush(targetScreen);
 }
 
-int getChars(int fd, word destStr, const int len, int *eofState){
-  if (destStr == NULL){
+int getChars(int fd, char *destStr, const int len, int *eofState) {
+  if (destStr == NULL) {
     raiseWarning("NULL string storage passed in."); // Non-fatal err
     return -1;
   }
 
   
-  if (fd == ERROR_SOCKFD_VALUE){
+  if (fd == ERROR_SOCKFD_VALUE) {
     raiseWarning("NULL file descriptor cannot be read from.");
     return -1;
   }
@@ -33,21 +33,24 @@ int getChars(int fd, word destStr, const int len, int *eofState){
   char c;
   int nAdded = 0;
 
-  for (; nAdded < len; ++nAdded){
-    int readResult =read(fd, &c, 1);
-    if (readResult == 0){//EOF encountered
+  for (; nAdded < len; ++nAdded) {
+    int readResult = read(fd, &c, 1);
+    if (readResult == 0) {//EOF encountered
       *eofState = True;
       break;
-    }else if (readResult == -1) break; //A read error occured
+    } else if (readResult == -1)
+        break; //A read error occured
 
     destStr[nAdded] = c;
   }
 
-  if (nAdded) destStr[nAdded] = '\0';
+  if (nAdded)
+    destStr[nAdded] = '\0';
+
   return nAdded;
 }
 
-Bool freeWord(word w){
+Bool freeWord(char *w) {
 #ifdef DEBUG
   printf("%s\n",__func__);
 #endif
@@ -60,11 +63,11 @@ Bool freeWord(word w){
 
 Bool initTBaudRatePair(
   TermPair *tP, const speed_t inBaudRate, const speed_t outBaudRate 
-){
+) {
   return initBaudRatePair(&(tP->baudRatePair), inBaudRate, outBaudRate); 
 }
 
-Bool flushTermSettings(TermPair *tP){
+Bool flushTermSettings(TermPair *tP) {
   if (tP == NULL) return False;
 
   if (tP->fd == ERROR_SOCKFD_VALUE) return False;
@@ -73,7 +76,7 @@ Bool flushTermSettings(TermPair *tP){
   return True;
 }
 
-Bool setBaudRate(TermPair *tP, const BaudRatePair newBP){
+Bool setBaudRate(TermPair *tP, const BaudRatePair newBP) {
   if (tP == NULL || tP->fd == ERROR_SOCKFD_VALUE) return False;
 
   if (newBP.inBaudRate != ERROR_BAUD_RATE)
@@ -86,13 +89,13 @@ Bool setBaudRate(TermPair *tP, const BaudRatePair newBP){
   return True;
 }
 
-Bool revertTermSettings(TermPair *tP){
+Bool revertTermSettings(TermPair *tP) {
   if (tP == NULL || tP->fd == ERROR_SOCKFD_VALUE) return False;
   return tcsetattr(tP->fd, TCSANOW, &(tP->origTerm)) != ERROR_SETATTR_RESULT;
 }
 
-void initTermPair(const int fd, TermPair *tP){
-  if (fd != ERROR_SOCKFD_VALUE && tP != NULL){
+void initTermPair(const int fd, TermPair *tP) {
+  if (fd != ERROR_SOCKFD_VALUE && tP != NULL) {
     tcgetattr(fd, &(tP->origTerm));
     tcsetattr(fd, TCSANOW, &(tP->newTerm));
     tP->fd = fd;
@@ -101,7 +104,7 @@ void initTermPair(const int fd, TermPair *tP){
 
 Bool initBaudRatePair(
   BaudRatePair *bP, const speed_t inSpeed, const speed_t outSpeed
-){
+) {
   if (bP == NULL) return False;
   bP->inBaudRate = inSpeed;
   bP->outBaudRate = outSpeed;

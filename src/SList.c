@@ -176,7 +176,7 @@ int addToList(SList *sl, void *data) {
 }
 
 int addToListWithFuncs(
-  SList *sl, void *data, void * (*copier)(void *), void (*dataFreer)(void *)
+  SList *sl, void *data, void *(*copier)(void *), void (*dataFreer)(void *)
 ) {
   if (sl == NULL) {
     // Non-fatal err -- treated as a warning
@@ -213,8 +213,6 @@ int addToListWithFuncs(
     return 1;
   }
 }
-
-
 
 inline unsigned int getSize(SList *sl) {
   return (sl == NULL ? 0 : sl->size);

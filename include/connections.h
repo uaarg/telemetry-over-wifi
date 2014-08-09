@@ -20,8 +20,8 @@
   //Get sockaddr, IPv4 or IPv6:
   void *get_in_addr(struct sockaddr *);
   
-  //Takes args: HostName, PORT both words/character sequences
-  int socketConnection(const word, const word);
+  //Takes args: HostName, PORT both char *s/character sequences
+  int socketConnection(const char *, const char *);
 
   //Given a struct containing hostName and port as attributes
   //invoke and return the result from socketConnection(...)
@@ -48,5 +48,5 @@
 
   //Given a port, an a file pointer for the data to be 
   //received through the port, spawn a server
-  int runServer(const word, FILE *);
+  int runServer(const char *, FILE *);
 #endif
