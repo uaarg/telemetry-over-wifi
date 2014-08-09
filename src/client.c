@@ -88,12 +88,12 @@ int main(int argc, char *argv[]) {
   }
 
   /*
-  //Uncomment to enable receiving mode
+  //Uncomment to enable Receiving mode
   pthread_t receiveThread;
   fileDescriptorPair recvfDPair;
   recvfDPair.fromFD = sockfd;
   recvfDPair.toFD = infd;
-  recvfDPair.state = RECEIVING;
+  recvfDPair.state = Receiving;
   pthread_create(&recvThread, NULL, msgTransit, &recvfDPair);
   //pthread_join(recvThread, NULL);
   */
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   fdPair sendFilePair; 
   sendFilePair.fromFD = tp.fd;
   sendFilePair.toFD = *sockfd;
-  sendFilePair.state = SENDING;
+  sendFilePair.state = Sending;
   sendFilePair.bufSize = MAX_BUF_LENGTH;
 
   pthread_create(&sendThread, NULL, msgTransit, &sendFilePair);

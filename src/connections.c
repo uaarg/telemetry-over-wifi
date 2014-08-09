@@ -121,12 +121,12 @@ void *msgTransit(void *data) {
   LLInt (*stateFunc)(fdPair *, struct timeval) = NULL;
 
   switch(currentState) {
-    case SENDING:{
+    case Sending:{
       stateFunc = sendData;
       break;
     }
 
-    case RECEIVING:{
+    case Receiving:{
       stateFunc = recvData;
       break;
     }

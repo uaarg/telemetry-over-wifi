@@ -20,7 +20,7 @@
   } DescriptorState;  
 
   typedef enum {
-    INVALID, SENDING, RECEIVING
+    Invalid, Sending, Receiving
   } DataState;
 
   typedef struct {
