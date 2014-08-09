@@ -76,10 +76,9 @@ void sigHandler(const int signalNum) {
 }
 
 void setSigHandler() {
-  struct sigaction *theAction;
-  theAction = (struct sigaction *)malloc(sizeof(struct sigaction));
-  theAction->sa_handler = sigHandler;
-  sigaction(SIGINT, theAction, NULL);
+  struct sigaction theAction;
+  theAction.sa_handler = sigHandler;
+  sigaction(SIGINT, &theAction, NULL);
 
   // Initializing the file handle and resource tracking SList
   resourcesList = createSList();
