@@ -22,29 +22,29 @@ LIBS := $(SYS_LIBS) -pthread
 CC := gcc
 CC_FLAGS := -Wall
 
-$(CLIENT_EXEC):	Makefile src/client.c ioLib connection polling slist
+$(CLIENT_EXEC):	Makefile src/client.c exec/ioLib.o exec/connections.o exec/polling.o exec/slist.o
 	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/SList.o exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o exec/polling.o src/client.c -o exec/$(CLIENT_EXEC)
 
-$(SERVER_EXEC):	Makefile src/streamServer.c ioLib connection polling slist
+$(SERVER_EXEC):	Makefile src/streamServer.c exec/ioLib.o exec/connections.o exec/polling.o exec/slist.o
 	$(CC) -D$(PLATFORM) $(LIBS) $(CC_FLAGS) exec/SList.o exec/sigHandling.o exec/ioLib.o exec/cserial.o exec/connections.o  exec/polling.o src/streamServer.c -o exec/$(SERVER_EXEC)
 
-connection:	include/connections.h src/connections.c sigHandling ioLib cserial
+exec/connections.o: include/connections.h src/connections.c exec/sigHandling.o exec/ioLib.o exec/cserial.o
 	$(CC) $(CC_FLAGS) -D$(PLATFORM) -c src/connections.c -o exec/connections.o
 
-ioLib:	include/ioLib.h src/ioLib.c include/dataTypes.h
+exec/ioLib.o:    include/ioLib.h src/ioLib.c include/dataTypes.h
 	$(CC) $(CC_FLAGS) -c src/ioLib.c -o exec/ioLib.o
 
-cserial:	include/cserial.h src/cserial.c include/dataTypes.h
+exec/cserial.o:	include/cserial.h src/cserial.c include/dataTypes.h
 	$(CC) $(CC_FLAGS) -c src/cserial.c -o exec/cserial.o
 
-sigHandling:	include/sigHandling.h src/sigHandling.c include/dataTypes.h ioLib cserial
+exec/sigHandling.o:	include/sigHandling.h src/sigHandling.c include/dataTypes.h exec/ioLib.o exec/cserial.o
 	$(CC) $(CC_FLAGS) -c src/sigHandling.c -o exec/sigHandling.o
 
 
-polling:	include/polling.h include/constants.h src/polling.c
+exec/polling.o:	include/polling.h include/constants.h src/polling.c
 	$(CC) $(CC_FLAGS) -c src/polling.c -o exec/polling.o
 
-slist:		include/SList.h src/SList.c
+exec/slist.o:		include/SList.h src/SList.c
 	$(CC) $(CC_FLAGS) -c src/SList.c -o exec/SList.o
 
 clean:

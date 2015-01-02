@@ -5,7 +5,6 @@
   #include <termios.h>
 
   typedef unsigned int uint32;
-
   typedef long long int LLInt;
 
   typedef enum {
@@ -21,14 +20,8 @@
   } DescriptorState;  
 
   typedef enum {
-    INVALID, SENDING, RECEIVING
+    Invalid, Sending, Receiving
   } DataState;
-
-  typedef char *word;
-
-  typedef struct {
-    int sockFD;
-  } BiSocket;
 
   typedef struct {
     int fromFD;
@@ -61,7 +54,7 @@
   } pollThStruct;
 
   typedef struct {
-    word port;
-    word hostName;
+    char *port;
+    char *hostName;
   } portHostStruct;
-#endif
+#endif // _DATA_TYPES_H

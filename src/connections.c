@@ -5,6 +5,7 @@
 #include <assert.h>
 #include <signal.h> 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../include/platformHandler.h"
@@ -23,12 +24,7 @@
 #include "../include/platformHandler.h" 
 #include "../include/constants.h"
 
-inline void initBiSocket(BiSocket *sock){
-  if (sock != NULL)
-    memset(sock, ERROR_SOCKFD_VALUE, sizeof(*sock));
-}  
-
-void *get_in_addr(struct sockaddr *sa){
+void *get_in_addr(struct sockaddr *sa) {
   // Brian Beej showed me how to do this one
   if (sa->sa_family == AF_INET) {
     return &(((struct sockaddr_in*)sa)->sin_addr);
@@ -36,7 +32,7 @@ void *get_in_addr(struct sockaddr *sa){
   return &(((struct sockaddr_in6*)sa)->sin6_addr);
 }
 
-void *socketViaStruct(void *pHStruct){
+void *socketViaStruct(void *pHStruct) {
   portHostStruct pHSt = *(portHostStruct *)pHStruct;
   int *sockResult = (int *)malloc(sizeof(int));
   *sockResult = socketConnection(pHSt.hostName, pHSt.port);
@@ -44,11 +40,13 @@ void *socketViaStruct(void *pHStruct){
   return (void *)sockResult;
 }
 
-int socketConnection(const word TARGET_HOST, const word PORT){
-  if (TARGET_HOST == NULL) return ERROR_SOCKFD_VALUE;
+int socketConnection(const char *targetHost, const char *portStr) {
+  if (targetHost == NULL || portStr == NULL)
+    return ERROR_SOCKFD_VALUE;
 
-  const short port = atoi(PORT);
-  if (port < MIN_PORT_VALUE || port > MAX_PORT_VALUE) return ERROR_SOCKFD_VALUE;
+  const short port = (short)atoi(portStr);
+  if (port < MIN_PORT_VALUE || port > MAX_PORT_VALUE)
+    return ERROR_SOCKFD_VALUE;
 
   int sockfd = ERROR_SOCKFD_VALUE;
   char hostAddrString[INET6_ADDRSTRLEN];
@@ -57,19 +55,19 @@ int socketConnection(const word TARGET_HOST, const word PORT){
 
   memset(&hints, 0, sizeof(hints));
 
-  hints.ai_family = AF_UNSPEC; //IPv4.6 agnostic
+  hints.ai_family = AF_UNSPEC; //IPv4/6 agnostic
   hints.ai_socktype = SOCK_DGRAM; // UDP
 
-  int addrResolveResult = getaddrinfo(TARGET_HOST,PORT,&hints, &servinfo);
+  int addrResolveResult = getaddrinfo(targetHost, portStr, &hints, &servinfo);
   if (addrResolveResult != 0) {
     fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(addrResolveResult));
     return ERROR_SOCKFD_VALUE;
   }
 
-  for(p = servinfo; p != NULL; p = p->ai_next){
+  for(p = servinfo; p != NULL; p = p->ai_next) {
     sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol);
 
-    if (sockfd == ERROR_SOCKFD_VALUE){
+    if (sockfd == ERROR_SOCKFD_VALUE) {
       perror("Client socket binding");
       continue;
     }
@@ -99,10 +97,10 @@ int socketConnection(const word TARGET_HOST, const word PORT){
   return sockfd;
 }
 
-void *msgTransit(void *data){
+void *msgTransit(void *data) {
   fdPair *fdData = (fdPair *)data;
 
-  if (fdData == NULL){
+  if (fdData == NULL) {
     raiseWarning("NULL fdData passed in"); // Fatality set to False
     return NULL;
   }
@@ -122,13 +120,13 @@ void *msgTransit(void *data){
 
   LLInt (*stateFunc)(fdPair *, struct timeval) = NULL;
 
-  switch(currentState){
-    case SENDING:{
+  switch(currentState) {
+    case Sending:{
       stateFunc = sendData;
       break;
     }
 
-    case RECEIVING:{
+    case Receiving:{
       stateFunc = recvData;
       break;
     }
@@ -149,7 +147,7 @@ void *msgTransit(void *data){
   return transactionByteCount;
 }
 
-LLInt sendData(fdPair *fDP, struct timeval timerStruct){
+LLInt sendData(fdPair *fDP, struct timeval timerStruct) {
   //Setting up variables for the transaction
   LLInt totalSentByteCount = 0;
 
@@ -167,7 +165,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   int eofState = False; //Once set, EOF was encountered
 
   while (1) {
-    word sendBuf = (word)malloc(sizeof(char)*BUF_SIZ);
+    char *sendBuf = (char *)malloc(sizeof(char)*BUF_SIZ);
     assert(sendBuf != NULL);
 
     int nRead = 0;
@@ -175,16 +173,15 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
 
     while (nRead < BUF_SIZ) {
       if (FD_ISSET(from, &descriptorSet)) { 
-	int readResult = read(from, &c, 1);
-	if (readResult == 0) { //EOF encountered
-	  eofState = True;
-	  break;
-	} else if (readResult == -1) break; //A read error occured
-
-	sendBuf[nRead] = c;
-	++nRead;
+        int readResult = read(from, &c, 1);
+        if (readResult == 0) { //EOF encountered
+            eofState = True;
+            break;
+        } else if (readResult == -1) break; //A read error occured
+            sendBuf[nRead] = c;
+            ++nRead;
       } else {
-	continue;
+        continue;
       }
     }
 
@@ -203,7 +200,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
     printf("%s", sendBuf);
   #endif
 
-    if (! nRead){
+    if (! nRead) {
     #ifdef DEBUG
       raiseWarning("Failed to read in a character from");
     #endif
@@ -235,7 +232,7 @@ LLInt sendData(fdPair *fDP, struct timeval timerStruct){
   return totalSentByteCount;
 }
 
-LLInt recvData(fdPair *fDP, struct timeval tv){
+LLInt recvData(fdPair *fDP, struct timeval tv) {
   fd_set monitorFDS;
 
   int toFD = fDP->toFD;
@@ -249,33 +246,33 @@ LLInt recvData(fdPair *fDP, struct timeval tv){
   int bufferedReads = 0;
   LLInt totalBytesIn=0, nRecvdBytes=0;
 
-  while (1){
-    if (FD_ISSET(sockfd, &monitorFDS)){
+  while (1) {
+    if (FD_ISSET(sockfd, &monitorFDS)) {
     #ifdef DEBUG
       fprintf(stderr, "Total bytes read in: %lld\r", totalBytesIn);
     #endif 
-    }else{
+    } else {
       //printf("Monitorfd time out\n");
       continue;
     }
 
     char *buf = (char *)malloc(sizeof(char)*MAX_BUF_LENGTH);
 
-    if (buf == NULL){
+    if (buf == NULL) {
       fprintf(stderr, "Run out-of memory!!\n");
       exit(-1);
     }
 
-    nRecvdBytes = recv(sockfd, buf, MAX_BUF_LENGTH-1, 0);
+    nRecvdBytes = recv(sockfd, buf, MAX_BUF_LENGTH - 1, 0);
 
     Bool breakTrue = nRecvdBytes ? False : True;
-    if (breakTrue){
+    if (breakTrue) {
       freeWord(buf);
       break;
     }
     
     ssize_t expectedWriteResult = strlen(buf); 
-    if (write(toFD, buf, expectedWriteResult) != expectedWriteResult){
+    if (write(toFD, buf, expectedWriteResult) != expectedWriteResult) {
       raiseWarning("Write error");
     } 
 
@@ -287,8 +284,8 @@ LLInt recvData(fdPair *fDP, struct timeval tv){
   return totalBytesIn;
 }
 
-int runServer(const word port, FILE *ifp){
-  if (ifp == NULL){
+int runServer(const char *port, FILE *ifp) {
+  if (ifp == NULL) {
     raiseWarning("Null file pointer passed in");
     return -2;
   }
@@ -317,13 +314,13 @@ int runServer(const word port, FILE *ifp){
   //Loop through all the results, binding to the first that accepts
   for(p = servinfo; p != NULL; p = p->ai_next) {
     sockfd = socket(p->ai_family, p->ai_socktype,p->ai_protocol);
-    if (sockfd == -1){
+    if (sockfd == -1) {
         perror("server: socket");
         continue;
     }
 
     //Enabling re-usability of our socket
-    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &YES, sizeof(int)) == -1){
+    if(setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &YES, sizeof(int)) == -1) {
       perror("setsockopt");
       return 1;
     }
@@ -412,23 +409,21 @@ int runServer(const word port, FILE *ifp){
   // tcflush(new_fd, TCOFLUSH);
     
   while (1) {
-    while (FD_ISSET(new_fd, &descriptorSet)){ 
+    while (FD_ISSET(new_fd, &descriptorSet)) { 
       //New data has come in the timer gets reset
       //nRead = getChars(convertedFD, sendBuf, BUF_SIZ);
       ;
     }
 
-    word recvBuf = (word)malloc(sizeof(char)*MAX_BUF_LENGTH);
+    char *recvBuf = (char *)malloc(sizeof(char)*MAX_BUF_LENGTH);
     int recvByteCount = recv(new_fd, recvBuf, MAX_BUF_LENGTH-1, 0);
 
-    if (recvByteCount == 0){ //Peer has performed an orderly shutdown
+    if (recvByteCount == 0) { //Peer has performed an orderly shutdown
       fflush(ifp);
       raise(SIGTERM); //Hacky way of closing down our processes, to be refined
-    }
-
-    else if (recvByteCount == -1){  
+    } else if (recvByteCount == -1) {  
       perror("send");
-    }else{ 
+    } else{ 
       totalRecvteCount += recvByteCount;
       fwrite(recvBuf, sizeof(char), recvByteCount, ifp);
       fflush(ifp);
