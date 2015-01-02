@@ -17,7 +17,7 @@
   #include "constants.h"
   #include "dataTypes.h"
 
-  void initBiSocket(BiSocket *);
+  inline void initBiSocket(BiSocket *);
 
   //Get sockaddr, IPv4 or IPv6:
   void *get_in_addr(struct sockaddr *);

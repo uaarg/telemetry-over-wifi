@@ -23,10 +23,9 @@
 #include "../include/platformHandler.h" 
 #include "../include/constants.h"
 
-void initBiSocket(BiSocket *sock){
-  if (sock != NULL){
-    memset(sock, ERROR_SOCKFD_VALUE, sizeof(sock));
-  }
+inline void initBiSocket(BiSocket *sock){
+  if (sock != NULL)
+    memset(sock, ERROR_SOCKFD_VALUE, sizeof(*sock));
 }  
 
 void *get_in_addr(struct sockaddr *sa){

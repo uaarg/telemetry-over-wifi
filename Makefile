@@ -49,6 +49,5 @@ slist:		include/SList.h src/SList.c
 
 clean:
 	cd exec/
-	find -type f -name "*.o" -exec $(RM_GEN)
-	find -name "$(SERVER_EXEC)" -exec $(RM_GEN)
-	find -name "$(CLIENT_EXEC)" -exec $(RM_GEN)
+	$(RM) exec/*.o
+	$(RM) exec/$(SERVER_EXEC) exec/$(CLIENT_EXEC)
